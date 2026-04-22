@@ -1,0 +1,23 @@
+{
+  "name": "Employee Portal",
+  "short_name": "Portal",
+  "description": "Standalone employee portal MVP for role-based access, leave requests, writeups, policies, training, and payroll views.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#0f172a",
+  "background_color": "#f1f5f9",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icons.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
