@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 4173 --strictPort --config vite.config.js --configLoader native",
+    "dev": "vite --host 0.0.0.0 --port 4174 --strictPort --config vite.config.js --configLoader native",
     "build": "tsc -b && vite build --config vite.config.js --configLoader native",
     "lint": "eslint .",
     "preview": "vite preview"

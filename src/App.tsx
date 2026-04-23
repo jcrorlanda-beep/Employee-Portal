@@ -1,4 +1,14 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from 'react';
+import { SectionCard, StatusPill } from './components/shared-ui';
+import { Policies as PolicyManagement } from './features/Policies';
+import { Training as TrainingManagement } from './features/Training';
+import { Leave as LeaveManagement } from './features/Leave';
+import { Schedule as ScheduleManagement } from './features/Schedule';
+import { Notifications as NotificationsManagement } from './features/Notifications';
+import { Reports as ReportsManagement } from './features/Reports';
+import { Writeups as WriteupManagement } from './features/Writeups';
+import { AdminDashboard, EmployeeMasterlist } from './features/Admin';
+import { DashboardHome } from './features/Dashboard';
 
 type Role = "Employee" | "Manager" | "HR" | "Payroll" | "Admin";
 type PolicyMethod = "Registered Signature" | "Freeform Signature" | "Acknowledge Only";
@@ -13,10 +23,16 @@ type TestAccount = {
   mobile: string;
   emergencyContact: string;
   employmentType: string;
+  pin: string;
 };
 
 type EmployeeRecord = TestAccount & {
   isActive: boolean;
+};
+
+type AuthSession = {
+  accountId: string;
+  role: Role;
 };
 
 type LeaveRequest = {
@@ -183,6 +199,7 @@ const testAccounts: TestAccount[] = [
     mobile: "+63 917 000 0000",
     emergencyContact: "Maria Carlo",
     employmentType: "Regular",
+    pin: "1111",
   },
   {
     id: "MGR-014",
@@ -194,6 +211,7 @@ const testAccounts: TestAccount[] = [
     mobile: "+63 917 222 1000",
     emergencyContact: "Luis Reyes",
     employmentType: "Regular",
+    pin: "2222",
   },
   {
     id: "HR-007",
@@ -205,6 +223,7 @@ const testAccounts: TestAccount[] = [
     mobile: "+63 917 333 2000",
     emergencyContact: "Nina Santos",
     employmentType: "Regular",
+    pin: "3333",
   },
   {
     id: "PAY-003",
@@ -216,6 +235,7 @@ const testAccounts: TestAccount[] = [
     mobile: "+63 917 444 3000",
     emergencyContact: "Mira Lim",
     employmentType: "Regular",
+    pin: "4444",
   },
   {
     id: "ADM-001",
@@ -227,6 +247,7 @@ const testAccounts: TestAccount[] = [
     mobile: "+63 917 555 4000",
     emergencyContact: "Alex Garcia",
     employmentType: "Regular",
+    pin: "5555",
   },
 ];
 
@@ -331,7 +352,7 @@ const dashboardStatsByRole: Record<Role, { title: string; value: string; sub: st
     { title: "Training Compliance", value: "91%", sub: "This month" },
   ],
   Payroll: [
-    { title: "Payroll Cycle", value: "Open", sub: "April 16â€“30" },
+    { title: "Payroll Cycle", value: "Open", sub: "April 16–30" },
     { title: "Payslips Published", value: "102", sub: "24 pending release" },
     { title: "Benefit Deductions", value: "Synced", sub: "Latest batch complete" },
     { title: "Correction Requests", value: "3", sub: "Requires review" },
@@ -340,7 +361,7 @@ const dashboardStatsByRole: Record<Role, { title: string; value: string; sub: st
     { title: "Users", value: "144", sub: "5 roles configured" },
     { title: "Open Actions", value: "31", sub: "Across all modules" },
     { title: "Audit Events", value: "284", sub: "Last 7 days" },
-    { title: "System Status", value: "Stable", sub: "MVP mode" },
+    { title: "System Status", value: "Stable", sub: "Release mode" },
   ],
 };
 
@@ -374,7 +395,7 @@ const initialLeaveRequests: LeaveRequest[] = [
     employeeId: "EMP-001",
     employeeName: "Jomar Carlo",
     type: "Vacation Leave",
-    range: "May 02â€“03",
+    range: "May 02–03",
     reason: "Family trip",
     status: "Submitted",
     requestedAt: "Apr 20, 2026",
@@ -424,9 +445,9 @@ const initialLeaveRequests: LeaveRequest[] = [
 ];
 
 const payslips = [
-  { period: "Apr 01â€“15, 2026", status: "Released", type: "Uploaded PDF + Summary" },
-  { period: "Mar 16â€“31, 2026", status: "Released", type: "Uploaded PDF + Summary" },
-  { period: "Mar 01â€“15, 2026", status: "Released", type: "Uploaded PDF" },
+  { period: "Apr 01–15, 2026", status: "Released", type: "Uploaded PDF + Summary" },
+  { period: "Mar 16–31, 2026", status: "Released", type: "Uploaded PDF + Summary" },
+  { period: "Mar 01–15, 2026", status: "Released", type: "Uploaded PDF" },
 ];
 
 const initialWriteups: Writeup[] = [
@@ -709,14 +730,16 @@ const initialScheduleEntries: ScheduleEntry[] = [
 ];
 
 const payslipDetailMap: Record<string, { gross: string; deductions: string; net: string; notes: string[] }> = {
-  "Apr 01â€“15, 2026": { gross: "â‚±18,500.00", deductions: "â‚±3,250.00", net: "â‚±15,250.00", notes: ["Includes transportation allowance", "Government mandatory deductions reflected", "Payslip released via hybrid payroll mode"] },
-  "Mar 16â€“31, 2026": { gross: "â‚±18,100.00", deductions: "â‚±3,090.00", net: "â‚±15,010.00", notes: ["Rice allowance included", "No attendance deduction applied", "Uploaded PDF + summary available"] },
-  "Mar 01â€“15, 2026": { gross: "â‚±17,900.00", deductions: "â‚±2,980.00", net: "â‚±14,920.00", notes: ["Uploaded PDF only in MVP sample", "Standard government deductions reflected", "No correction request filed"] },
+  "Apr 01–15, 2026": { gross: "₱18,500.00", deductions: "₱3,250.00", net: "₱15,250.00", notes: ["Includes transportation allowance", "Government mandatory deductions reflected", "Payslip released via hybrid payroll mode"] },
+  "Mar 16–31, 2026": { gross: "₱18,100.00", deductions: "₱3,090.00", net: "₱15,010.00", notes: ["Rice allowance included", "No attendance deduction applied", "Uploaded PDF + summary available"] },
+  "Mar 01–15, 2026": { gross: "₱17,900.00", deductions: "₱2,980.00", net: "₱14,920.00", notes: ["Uploaded PDF only in sample archive", "Standard government deductions reflected", "No correction request filed"] },
 };
 
 const storageKeys = {
   selectedAccountId: "employee-portal:selectedAccountId",
   currentRole: "employee-portal:currentRole",
+  authSession: "employee-portal:authSession",
+  storageVersion: "employee-portal:storageVersion",
   employeeRecords: "employee-portal:employeeRecords",
   scheduleEntries: "employee-portal:scheduleEntries",
   notificationReadIds: "employee-portal:notificationReadIds",
@@ -728,24 +751,84 @@ const storageKeys = {
   trainingProgress: "employee-portal:trainingProgress",
 } as const;
 
-function readStoredValue<T>(key: string, fallback: T) {
+const storageVersion = "1";
+
+function safeParseStoredValue(raw: string) {
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return raw;
+  }
+}
+
+function isCompatibleStorageVersion() {
+  try {
+    if (typeof window === "undefined") return true;
+    const storedVersion = window.localStorage.getItem(storageKeys.storageVersion);
+    return !storedVersion || storedVersion === storageVersion;
+  } catch {
+    return true;
+  }
+}
+
+function readStoredValue<T>(key: string, fallback: T, validate?: (value: unknown) => value is T) {
   try {
     if (typeof window === "undefined") return fallback;
+    if (!isCompatibleStorageVersion()) return fallback;
     const raw = window.localStorage.getItem(key);
     if (!raw) return fallback;
-    return JSON.parse(raw) as T;
+    const parsed = safeParseStoredValue(raw);
+    if (validate && !validate(parsed)) return fallback;
+    return parsed as T;
   } catch {
     return fallback;
   }
 }
 
+function writeStoredValue(key: string, value: unknown) {
+  try {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(key, JSON.stringify(value));
+    window.localStorage.setItem(storageKeys.storageVersion, storageVersion);
+  } catch {
+    // Ignore storage failures and keep the MVP working in-memory.
+  }
+}
+
+function removeStoredValue(key: string) {
+  try {
+    if (typeof window === "undefined") return;
+    window.localStorage.removeItem(key);
+  } catch {
+    // Ignore storage failures and keep the MVP working in-memory.
+  }
+}
+
 function readStoredAccountId() {
-  const storedId = readStoredValue<string>(storageKeys.selectedAccountId, testAccounts[0].id);
+  const storedId = readStoredValue<string>(storageKeys.selectedAccountId, testAccounts[0].id, (value): value is string => typeof value === "string");
   return testAccounts.some((account) => account.id === storedId) ? storedId : testAccounts[0].id;
 }
 
+function readStoredAuthSession() {
+  const session = readStoredValue<Partial<AuthSession> | null>(
+    storageKeys.authSession,
+    null,
+    (value): value is Partial<AuthSession> | null => {
+      if (value === null) return true;
+      if (typeof value !== "object" || value === null) return false;
+      const candidate = value as Partial<AuthSession>;
+      return typeof candidate.accountId === "string" && typeof candidate.role === "string";
+    },
+  );
+  if (!session || !session.accountId || !session.role) return null;
+  const account = testAccounts.find((item) => item.id === session.accountId);
+  if (!account) return null;
+  if (!(Object.keys(roleMenus) as Role[]).includes(session.role as Role)) return null;
+  return { accountId: account.id, role: session.role as Role };
+}
+
 function readStoredRole(fallback: Role) {
-  const storedRole = readStoredValue<string>(storageKeys.currentRole, fallback);
+  const storedRole = readStoredValue<string>(storageKeys.currentRole, fallback, (value): value is string => typeof value === "string");
   return (Object.keys(roleMenus) as Role[]).includes(storedRole as Role) && storedRole === fallback ? (storedRole as Role) : fallback;
 }
 
@@ -877,6 +960,7 @@ function normalizeWriteups(items: Partial<Writeup>[] | Writeup[]) {
 }
 
 function normalizeEmployeeRecord(item: Partial<EmployeeRecord>): EmployeeRecord {
+  const fallbackPin = testAccounts.find((account) => account.id === item.id)?.pin ?? "1234";
   return {
     id: item.id?.trim() || "",
     name: item.name?.trim() || "Unnamed Employee",
@@ -887,6 +971,7 @@ function normalizeEmployeeRecord(item: Partial<EmployeeRecord>): EmployeeRecord 
     mobile: item.mobile?.trim() || "Not set",
     emergencyContact: item.emergencyContact?.trim() || "Not set",
     employmentType: item.employmentType?.trim() || "Regular",
+    pin: item.pin?.trim() || fallbackPin,
     isActive: item.isActive ?? true,
   };
 }
@@ -952,40 +1037,29 @@ function getLocalISODate(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function StatusPill({ children }: { children: React.ReactNode }) {
-  return <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">{children}</span>;
-}
-
-function SectionCard({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
-  return (
-    <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="text-lg font-bold">{title}</h3>
-        {action}
-      </div>
-      <div className="mt-4">{children}</div>
-    </div>
-  );
-}
-
 export default function EmployeePortalPrototype() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const initialSelectedAccountId = readStoredAccountId();
+  const initialAuthSession = readStoredAuthSession();
+  const initialSelectedAccountId = initialAuthSession?.accountId ?? readStoredAccountId();
   const initialSelectedAccount = testAccounts.find((account) => account.id === initialSelectedAccountId) ?? testAccounts[0];
+  const [isLoggedIn, setIsLoggedIn] = useState(() => Boolean(initialAuthSession));
   const [selectedAccountId, setSelectedAccountId] = useState(() => initialSelectedAccountId);
   const [activePage, setActivePage] = useState("Dashboard");
-  const [currentRole, setCurrentRole] = useState<Role>(() => readStoredRole(initialSelectedAccount.role));
+  const [currentRole, setCurrentRole] = useState<Role>(() => initialAuthSession?.role ?? readStoredRole(initialSelectedAccount.role));
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+  const [selectedAccountPin, setSelectedAccountPin] = useState("");
+  const [pinError, setPinError] = useState("");
   const [selectedPolicyMethod, setSelectedPolicyMethod] = useState<PolicyMethod>("Registered Signature");
   const [selectedPolicyTitle, setSelectedPolicyTitle] = useState<string | null>(null);
   const [selectedTrainingTitle, setSelectedTrainingTitle] = useState<string | null>(null);
   const [selectedPayslipPeriod, setSelectedPayslipPeriod] = useState<string | null>(null);
   const [trainingQuizSubmitted, setTrainingQuizSubmitted] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
-  const [freeformSigned, setFreeformSigned] = useState(false);
-  const [registeredConfirmed, setRegisteredConfirmed] = useState(false);
-  const [policyAcknowledged, setPolicyAcknowledged] = useState(false);
+  const [, setFreeformSigned] = useState(false);
+  const [, setRegisteredConfirmed] = useState(false);
+  const [, setPolicyAcknowledged] = useState(false);
   const [employeeRecords, setEmployeeRecords] = useState<EmployeeRecord[]>(() => normalizeEmployeeRecords(readStoredArray<EmployeeRecord>(storageKeys.employeeRecords, initialEmployeeRecords)));
   const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>(() => normalizeScheduleEntries(readStoredArray<ScheduleEntry>(storageKeys.scheduleEntries, initialScheduleEntries)));
   const [notificationReadIds, setNotificationReadIds] = useState<string[]>(() => readStoredArray<string>(storageKeys.notificationReadIds, []));
@@ -1029,6 +1103,7 @@ export default function EmployeePortalPrototype() {
     mobile: "",
     emergencyContact: "Not set",
     employmentType: "Regular",
+    pin: "1234",
     isActive: true,
   }));
   const [policyCatalog, setPolicyCatalog] = useState<PolicyRecord[]>(() => readStoredArray<PolicyRecord>(storageKeys.policyCatalog, initialPolicyCatalog));
@@ -1091,91 +1166,63 @@ export default function EmployeePortalPrototype() {
   const employeeAssignedTrainingCount = visibleTraining.length;
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(storageKeys.selectedAccountId, selectedAccountId);
-    } catch {
-      // Ignore storage failures and keep the MVP working in-memory.
-    }
+    writeStoredValue(storageKeys.storageVersion, storageVersion);
+  }, []);
+
+  useEffect(() => {
+    writeStoredValue(storageKeys.selectedAccountId, selectedAccountId);
   }, [selectedAccountId]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(storageKeys.currentRole, currentRole);
-    } catch {
-      // Ignore storage failures and keep the MVP working in-memory.
-    }
+    writeStoredValue(storageKeys.currentRole, currentRole);
   }, [currentRole]);
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(storageKeys.employeeRecords, JSON.stringify(employeeRecords));
+      if (!isLoggedIn) {
+        removeStoredValue(storageKeys.authSession);
+        return;
+      }
+      writeStoredValue(storageKeys.authSession, { accountId: selectedAccountId, role: currentRole });
     } catch {
       // Ignore storage failures and keep the MVP working in-memory.
     }
+  }, [currentRole, isLoggedIn, selectedAccountId]);
+
+  useEffect(() => {
+    writeStoredValue(storageKeys.employeeRecords, employeeRecords);
   }, [employeeRecords]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(storageKeys.scheduleEntries, JSON.stringify(scheduleEntries));
-    } catch {
-      // Ignore storage failures and keep the MVP working in-memory.
-    }
+    writeStoredValue(storageKeys.scheduleEntries, scheduleEntries);
   }, [scheduleEntries]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(storageKeys.notificationReadIds, JSON.stringify(notificationReadIds));
-    } catch {
-      // Ignore storage failures and keep the MVP working in-memory.
-    }
+    writeStoredValue(storageKeys.notificationReadIds, notificationReadIds);
   }, [notificationReadIds]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(storageKeys.leaveRequests, JSON.stringify(leaveRequests));
-    } catch {
-      // Ignore storage failures and keep the MVP working in-memory.
-    }
+    writeStoredValue(storageKeys.leaveRequests, leaveRequests);
   }, [leaveRequests]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(storageKeys.writeupRecords, JSON.stringify(writeupRecords));
-    } catch {
-      // Ignore storage failures and keep the MVP working in-memory.
-    }
+    writeStoredValue(storageKeys.writeupRecords, writeupRecords);
   }, [writeupRecords]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(storageKeys.policyCatalog, JSON.stringify(policyCatalog));
-    } catch {
-      // Ignore storage failures and keep the MVP working in-memory.
-    }
+    writeStoredValue(storageKeys.policyCatalog, policyCatalog);
   }, [policyCatalog]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(storageKeys.policySignatures, JSON.stringify(policySignatures));
-    } catch {
-      // Ignore storage failures and keep the MVP working in-memory.
-    }
+    writeStoredValue(storageKeys.policySignatures, policySignatures);
   }, [policySignatures]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(storageKeys.trainingCatalog, JSON.stringify(trainingCatalog));
-    } catch {
-      // Ignore storage failures and keep the MVP working in-memory.
-    }
+    writeStoredValue(storageKeys.trainingCatalog, trainingCatalog);
   }, [trainingCatalog]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(storageKeys.trainingProgress, JSON.stringify(trainingProgress));
-    } catch {
-      // Ignore storage failures and keep the MVP working in-memory.
-    }
+    writeStoredValue(storageKeys.trainingProgress, trainingProgress);
   }, [trainingProgress]);
 
   useEffect(() => {
@@ -1217,34 +1264,84 @@ export default function EmployeePortalPrototype() {
   }, [activePage, menu]);
 
   useEffect(() => {
+    if (isLoggedIn) return;
+    setSelectedAccountPin("");
+    setPinError("");
+  }, [isLoggedIn, selectedAccountId]);
+
+  useEffect(() => {
     const isIPhoneOrIPad =
       typeof navigator !== "undefined" &&
       (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+    const isStandaloneDisplayMode =
+      typeof window !== "undefined" &&
+      (window.matchMedia?.("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true);
 
     setIsIOS(isIPhoneOrIPad);
+    setIsStandalone(isStandaloneDisplayMode);
+    setIsOffline(typeof navigator !== "undefined" ? !navigator.onLine : false);
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setDeferredInstallPrompt(event as BeforeInstallPromptEvent);
     };
 
-    const handleAppInstalled = () => setDeferredInstallPrompt(null);
+    const handleAppInstalled = () => {
+      setDeferredInstallPrompt(null);
+      setIsStandalone(true);
+    };
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", handleAppInstalled);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
   const handleInstallApp = async () => {
     if (!deferredInstallPrompt) return;
     await deferredInstallPrompt.prompt();
-    await deferredInstallPrompt.userChoice;
+    const choice = await deferredInstallPrompt.userChoice;
+    if (choice.outcome === "accepted") {
+      setIsStandalone(true);
+    }
     setDeferredInstallPrompt(null);
   };
+
+  const getAccountPin = (accountId: string) => employeeRecords.find((item) => item.id === accountId)?.pin ?? testAccounts.find((item) => item.id === accountId)?.pin ?? "1234";
+
+  const handleUnlockAccount = () => {
+    const expectedPin = getAccountPin(activeAccount.id);
+    if (selectedAccountPin.trim() !== expectedPin) {
+      setPinError("Invalid PIN. Please try again.");
+      return;
+    }
+
+    setPinError("");
+    setIsLoggedIn(true);
+    setSelectedAccountPin("");
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setSelectedAccountPin("");
+    setPinError("");
+  };
+
+  const renderConnectivityBanner = () =>
+    isOffline ? (
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        You are offline. The app is using the last saved state from this device, and your current data can still be viewed safely.
+      </div>
+    ) : null;
 
   const getTrainingScore = (module: TrainingModule, answers: Record<string, string>) => {
     const questions = getTrainingQuizQuestions(module);
@@ -1278,6 +1375,7 @@ export default function EmployeePortalPrototype() {
       mobile: "",
       emergencyContact: "Not set",
       employmentType: "Regular",
+      pin: "1234",
       isActive: true,
     });
     const fallbackEmployee = initialEmployeeRecords[0];
@@ -1309,6 +1407,7 @@ export default function EmployeePortalPrototype() {
       mobile: "",
       emergencyContact: "Not set",
       employmentType: "Regular",
+      pin: "1234",
       isActive: true,
     });
   };
@@ -1922,24 +2021,24 @@ export default function EmployeePortalPrototype() {
   const unreadNotificationCount = notifications.filter((item) => item.unread).length;
 
   const renderLogin = () => (
-    <div className="min-h-screen bg-slate-100 px-4 py-10 text-slate-900 sm:px-6 lg:px-8">
+    <div className="min-h-[100dvh] bg-slate-100 px-4 py-10 text-slate-900 sm:px-6 lg:px-8 [overscroll-behavior-y:contain]">
       <div className="mx-auto grid max-w-6xl gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="rounded-3xl bg-slate-950 p-8 text-white shadow-sm">
-          <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Standalone MVP</div>
+          <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Internal Release</div>
           <h1 className="mt-3 text-3xl font-bold">Employee Portal</h1>
-          <p className="mt-4 text-sm text-slate-300">Login, role-based access, leave workflow, payslip viewer, policy signing, training quiz, writeups, and HR pages are now usable for MVP testing.</p>
+          <p className="mt-4 text-sm text-slate-300">Login, role-based access, leave workflow, payslip viewer, policy signing, training quiz, writeups, and HR pages are ready for internal release use.</p>
           <div className="mt-8 rounded-3xl bg-slate-900 p-5">
-            <div className="text-sm font-semibold">Built in MVP</div>
+            <div className="text-sm font-semibold">Core Features</div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {[
-                "Test account selector",
+                "Account selector",
                 "Role-based navigation",
                 "Leave filing + approvals",
                 "Payslip detail viewer",
-                "Policy signing demo",
+                "Policy signing",
                 "Training quiz flow",
                 "Writeup tracking",
-                "Employee masterlist preview",
+                "Employee masterlist",
               ].map((item) => (
                 <div key={item} className="rounded-2xl border border-slate-800 px-4 py-3 text-sm text-slate-300">{item}</div>
               ))}
@@ -1948,9 +2047,10 @@ export default function EmployeePortalPrototype() {
         </div>
 
         <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          {renderConnectivityBanner()}
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm text-slate-500">MVP access</div>
+              <div className="text-sm text-slate-500">Access</div>
               <h2 className="text-2xl font-bold">Select a test account</h2>
             </div>
             <StatusPill>No password required</StatusPill>
@@ -1977,21 +2077,43 @@ export default function EmployeePortalPrototype() {
           <div className="mt-6 rounded-3xl bg-slate-50 p-5">
             <div className="text-sm text-slate-500">Selected account</div>
             <div className="mt-2 text-xl font-bold">{activeAccount.name}</div>
-            <div className="mt-1 text-sm text-slate-500">{activeAccount.role} â€¢ {activeAccount.department} â€¢ {activeAccount.id}</div>
-            <button
-              onClick={() => {
-                syncPersonaSelection(activeAccount.id, activeAccount.role);
-                setIsLoggedIn(true);
-              }}
-              className="mt-5 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white"
-            >
-              Enter MVP
-            </button>
+            <div className="mt-1 text-sm text-slate-500">{activeAccount.role} • {activeAccount.department} • {activeAccount.id}</div>
+            <div className="mt-4 space-y-3">
+              <label className="block text-sm font-semibold text-slate-700">
+                PIN
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  value={selectedAccountPin}
+                  onChange={(event) => {
+                    setSelectedAccountPin(event.target.value);
+                    setPinError("");
+                  }}
+                  placeholder="Enter PIN"
+                  className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-base tracking-[0.35em] outline-none transition focus:border-slate-950"
+                />
+              </label>
+              <p className="text-xs leading-5 text-slate-500">Use the PIN stored for this account. This keeps the release lightweight while still protecting the app view.</p>
+              {pinError && <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{pinError}</div>}
+              <button
+                onClick={() => {
+                  syncPersonaSelection(activeAccount.id, activeAccount.role);
+                  handleUnlockAccount();
+                }}
+                className="w-full rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white"
+              >
+                Unlock Account
+              </button>
+            </div>
           </div>
 
           <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-5">
             <div className="text-sm font-semibold">Install app</div>
-            {deferredInstallPrompt ? (
+            {isStandalone ? (
+              <div className="mt-2 rounded-2xl bg-white p-4 text-sm text-slate-600">
+                This app is already installed on your device.
+              </div>
+            ) : deferredInstallPrompt ? (
               <>
                 <p className="mt-2 text-sm text-slate-600">Install the portal for a more app-like experience on supported browsers.</p>
                 <button onClick={handleInstallApp} className="mt-4 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white">
@@ -2101,7 +2223,7 @@ export default function EmployeePortalPrototype() {
         const latestTrail = item.trail[item.trail.length - 1];
         return {
           title: `Leave ${latestTrail.status}`,
-          description: `${item.employeeName} · ${item.type} · ${item.range}`,
+          description: `${item.employeeName} • ${item.type} • ${item.range}`,
           timestamp: latestTrail.date,
           sortKey: parseActivityDate(latestTrail.date),
         };
@@ -2116,7 +2238,7 @@ export default function EmployeePortalPrototype() {
         .filter((item) => item.completionDate)
         .map((item) => ({
           title: item.status === "Failed" ? "Training failed" : "Training completed",
-          description: `${item.employeeName} · ${trainingCatalog.find((module) => module.id === item.moduleId)?.title ?? item.moduleId} · ${item.status}`,
+          description: `${item.employeeName} • ${trainingCatalog.find((module) => module.id === item.moduleId)?.title ?? item.moduleId} • ${item.status}`,
           timestamp: item.completionDate ?? "",
           sortKey: parseActivityDate(item.completionDate ?? ""),
         })),
@@ -2124,7 +2246,7 @@ export default function EmployeePortalPrototype() {
         const latestTrail = item.trail[item.trail.length - 1];
         return {
           title: `Writeup ${latestTrail.action}`,
-          description: `${item.employee} · ${item.title}`,
+          description: `${item.employee} • ${item.title}`,
           timestamp: latestTrail.dateTime,
           sortKey: parseActivityDate(latestTrail.dateTime),
         };
@@ -2148,194 +2270,32 @@ export default function EmployeePortalPrototype() {
       return count + assignedModules.filter((item) => !completedModuleIds.includes(item.id)).length;
     }, 0);
     const pendingWriteupActions = writeupRecords.filter((item) => item.status === "Pending Acknowledgment" || item.status === "Pending Signature").length;
+    const adminMetrics = [
+      { label: "Total employees", value: String(totalEmployees), note: "Directory records" },
+      { label: "Active employees", value: String(activeEmployees), note: "Currently active" },
+      { label: "Inactive employees", value: String(inactiveEmployees), note: "Temporarily inactive" },
+      { label: "Pending leave approvals", value: String(pendingLeaveApprovals), note: "Manager + HR queue" },
+      { label: "Pending policy signatures", value: String(pendingPolicySignatures), note: "Required policies" },
+      { label: "Incomplete training assignments", value: String(incompleteTrainingAssignments), note: "Assigned modules" },
+      { label: "Pending writeup actions", value: String(pendingWriteupActions), note: "Acknowledgment or signature" },
+    ];
 
     return (
-    <div className="space-y-6 pb-2">
-      <section className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white shadow-sm ring-1 ring-slate-900/10">
-        <div className="relative">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.12),_transparent_34%),radial-gradient(circle_at_bottom_left,_rgba(148,163,184,0.12),_transparent_30%)]" />
-          <div className="relative p-6 sm:p-7">
-            <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
-              <span>Home</span>
-              <span className="rounded-full bg-white/10 px-2 py-1 text-[11px] tracking-[0.18em] text-white/80">{roleBadges[currentRole]}</span>
-            </div>
-            <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-2xl">
-                <h3 className="text-3xl font-bold leading-tight sm:text-4xl">Welcome back, {activeAccount.name}</h3>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
-                  Your day starts here: quick access to leave, payroll, policies, training, and team updates, all in one employee self-service home.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <StatusPill>{activeAccount.role}</StatusPill>
-                <StatusPill>{activeAccount.department}</StatusPill>
-                <StatusPill>{activeAccount.id}</StatusPill>
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              {stats.slice(0, 3).map((card) => (
-                <div key={card.title} className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-                  <div className="text-xs uppercase tracking-wide text-slate-400">{card.title}</div>
-                  <div className="mt-2 text-2xl font-bold text-white">{card.value}</div>
-                  <div className="mt-1 text-sm text-slate-300">{card.sub}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              {[
-                { label: "Leave Request", page: "Leave" },
-                { label: "Payslips", page: "Payslips" },
-                { label: "Policies", page: "Policies" },
-                { label: "Training", page: "Training" },
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  onClick={() => setActivePage(item.page)}
-                  className="rounded-full border border-white/10 bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-100"
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {stats.map((card) => (
-          <div key={card.title} className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <div className="text-sm text-slate-500">{card.title}</div>
-            <div className="mt-2 text-3xl font-bold">{card.value}</div>
-            <div className="mt-1 text-sm text-slate-500">{card.sub}</div>
-          </div>
-        ))}
-      </section>
-
-      {currentRole === "Admin" && (
-        <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          <SectionCard title="Admin Control Center" action={<StatusPill>Live summary</StatusPill>}>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {[
-                { label: "Total employees", value: String(totalEmployees), note: "Directory records" },
-                { label: "Active employees", value: String(activeEmployees), note: "Currently active" },
-                { label: "Inactive employees", value: String(inactiveEmployees), note: "Temporarily inactive" },
-                { label: "Pending leave approvals", value: String(pendingLeaveApprovals), note: "Manager + HR queue" },
-                { label: "Pending policy signatures", value: String(pendingPolicySignatures), note: "Required policies" },
-                { label: "Incomplete training assignments", value: String(incompleteTrainingAssignments), note: "Assigned modules" },
-                { label: "Pending writeup actions", value: String(pendingWriteupActions), note: "Acknowledgment or signature" },
-              ].map((item) => (
-                <div key={item.label} className="rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm ring-1 ring-slate-200">
-                  <div className="text-xs uppercase tracking-wide text-slate-400">{item.label}</div>
-                  <div className="mt-2 text-2xl font-bold text-slate-900">{item.value}</div>
-                  <div className="mt-1 text-sm text-slate-500">{item.note}</div>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Recent Activity" action={<StatusPill>Latest 6</StatusPill>}>
-            <div className="space-y-3">
-              {recentActivityItems.length > 0 ? (
-                recentActivityItems.map((item) => (
-                  <div key={`${item.title}-${item.timestamp}-${item.description}`} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-200">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="text-base font-semibold text-slate-900">{item.title}</div>
-                        <div className="mt-1 text-sm leading-6 text-slate-500">{item.description}</div>
-                      </div>
-                      <div className="text-xs text-slate-400">{item.timestamp}</div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
-                  No recent activity is available yet.
-                </div>
-              )}
-            </div>
-          </SectionCard>
-        </section>
-      )}
-
-      <section className="grid gap-6 xl:grid-cols-[1.25fr_0.95fr]">
-        <SectionCard title="Quick Access" action={<StatusPill>Tap to open</StatusPill>}>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {menu.map((item) => (
-              <button
-                key={item}
-                onClick={() => setActivePage(item)}
-                className="group rounded-3xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2 text-base font-semibold text-slate-900">
-                      <span>{item}</span>
-                      {item === "Notifications" && unreadNotificationCount > 0 && (
-                        <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-bold text-rose-700">{unreadNotificationCount}</span>
-                      )}
-                    </div>
-                    <p className="mt-2 text-sm leading-6 text-slate-500">Open the {item} module.</p>
-                  </div>
-                  <div className="rounded-2xl bg-slate-950 px-2.5 py-1 text-xs font-semibold text-white transition group-hover:bg-slate-800">Open</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </SectionCard>
-
-        <div className="space-y-6">
-          <SectionCard title="Action Center" action={<StatusPill>{dashboardActionCount} pending</StatusPill>}>
-            <div className="space-y-3">
-              {dashboardActionItems.length > 0 ? (
-                dashboardActionItems.map((item) => (
-                  <div key={item.key} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-200">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="text-base font-semibold text-slate-900">{item.title}</div>
-                        <div className="mt-1 text-sm leading-6 text-slate-500">{item.description}</div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <StatusPill>{item.status}</StatusPill>
-                        <button onClick={item.onAction} className="rounded-xl bg-slate-950 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800">
-                          {item.buttonLabel}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
-                  {currentRole === "Employee"
-                    ? "No pending policy signatures, training modules, or writeups right now."
-                    : currentRole === "Manager"
-                      ? "No leave requests are waiting for manager review right now."
-                      : currentRole === "HR"
-                        ? "No leave requests are waiting for final HR review right now."
-                        : "No pending actions for this role right now."}
-                </div>
-              )}
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Announcements">
-            <div className="space-y-4">
-              {announcements.map((item) => (
-                <div key={item.title} className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="font-semibold">{item.title}</div>
-                    <div className="text-xs text-slate-400">{item.date}</div>
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">{item.body}</p>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-        </div>
-      </section>
-    </div>
-  );
+      <DashboardHome
+        currentRole={currentRole}
+        activeAccount={activeAccount}
+        menu={menu}
+        roleBadge={roleBadges[currentRole]}
+        stats={stats}
+        unreadNotificationCount={unreadNotificationCount}
+        dashboardActionItems={dashboardActionItems}
+        dashboardActionCount={dashboardActionCount}
+        recentActivityItems={recentActivityItems}
+        adminMetrics={adminMetrics}
+        announcements={announcements}
+        setActivePage={setActivePage}
+      />
+    );
   };
 
   const renderProfile = () => (
@@ -2408,9 +2368,9 @@ export default function EmployeePortalPrototype() {
             </div>
           </SectionCard>
 
-          <SectionCard title="Dependents" action={<StatusPill>Demo view</StatusPill>}>
+          <SectionCard title="Dependents" action={<StatusPill>Profile view</StatusPill>}>
             <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6">
-              <div className="text-sm font-semibold text-slate-900">No dependents added in this MVP sample</div>
+              <div className="text-sm font-semibold text-slate-900">No dependents added yet</div>
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 Dependents can be shown here when the profile data includes family members or beneficiaries.
               </p>
@@ -2612,11 +2572,11 @@ export default function EmployeePortalPrototype() {
                 <div className="text-sm font-semibold uppercase tracking-wide text-slate-400">Punch Request</div>
                 <div className="mt-3 text-xl font-bold">Action Area</div>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
-                  Request an attendance correction or demonstrate the manual entry flow for approved roles.
+                  Request an attendance correction or use the manual entry flow for approved roles.
                 </p>
                 <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                   <button className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950">Request Attendance Correction</button>
-                  <button className="rounded-2xl border border-white/15 px-4 py-3 text-sm font-semibold text-white">Manual Entry Demo</button>
+                  <button className="rounded-2xl border border-white/15 px-4 py-3 text-sm font-semibold text-white">Manual Entry</button>
                 </div>
               </div>
             </div>
@@ -2626,213 +2586,28 @@ export default function EmployeePortalPrototype() {
     })()
   );
 
-  const renderLeave = () => (
-    (() => {
-      const leaveAllowance = {
-        "Vacation Leave": 10,
-        "Sick Leave": 5,
-        "Emergency Leave": 3,
-        "Maternity Leave": 60,
-        "Paternity Leave": 14,
-        "Bereavement Leave": 3,
-      } as const;
-
-      const leaveTypes = Object.keys(leaveAllowance) as (keyof typeof leaveAllowance)[];
-      const visibleLeaveRequests =
-        currentRole === "Manager"
-          ? leaveRequests.filter((item) => item.status === "Submitted")
-          : currentRole === "HR"
-            ? leaveRequests.filter((item) => item.status === "Manager Approved")
-            : currentRole === "Employee"
-              ? filteredLeaveRequests
-              : leaveRequests;
-      const requestCount = visibleLeaveRequests.length;
-      const pendingCount = leaveRequests.filter((item) => item.status === "Submitted" || item.status === "Manager Approved").length;
-      const approvedCount = leaveRequests.filter((item) => item.status === "HR Approved").length;
-      const queueLabel =
-        currentRole === "Manager"
-          ? "Manager review queue"
-          : currentRole === "HR"
-            ? "HR review queue"
-            : currentRole === "Employee"
-              ? "My time off"
-              : "All leave requests";
-
-      return (
-        <div className="space-y-6">
-          <section className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white shadow-sm ring-1 ring-slate-900/10">
-            <div className="p-5 sm:p-6">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Time Off</div>
-                  <h3 className="mt-2 text-3xl font-bold leading-tight">Balances and requests</h3>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                    Review your available leave, check recent requests, and submit new time off from a cleaner mobile-first layout.
-                  </p>
-                </div>
-                <div className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-white/90">
-                  {queueLabel}
-                </div>
-              </div>
-
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              {[
-                { label: "Requests shown", value: String(requestCount), note: "In this view" },
-                { label: "Pending review", value: String(pendingCount), note: "Needs action" },
-                { label: "Final approved", value: String(approvedCount), note: "HR completed" },
-              ].map((item) => (
-                  <div key={item.label} className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-                    <div className="text-xs uppercase tracking-wide text-slate-400">{item.label}</div>
-                    <div className="mt-2 text-2xl font-bold">{item.value}</div>
-                    <div className="mt-1 text-sm text-slate-300">{item.note}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {leaveTypes.map((type) => {
-              const used = filteredLeaveRequests.filter((item) => item.type === type && item.status !== "Cancelled" && item.status !== "Manager Rejected" && item.status !== "HR Rejected").length;
-              const allowed = leaveAllowance[type];
-              const balance = Math.max(allowed - used, 0);
-              return (
-                <div key={type} className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                  <div className="text-sm font-semibold text-slate-900">{type}</div>
-                  <div className="mt-4 grid grid-cols-3 gap-3">
-                    <div className="rounded-2xl bg-slate-50 p-3">
-                      <div className="text-[11px] uppercase tracking-wide text-slate-400">Allowed</div>
-                      <div className="mt-2 text-xl font-bold text-slate-900">{allowed}</div>
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 p-3">
-                      <div className="text-[11px] uppercase tracking-wide text-slate-400">Used</div>
-                      <div className="mt-2 text-xl font-bold text-slate-900">{used}</div>
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 p-3">
-                      <div className="text-[11px] uppercase tracking-wide text-slate-400">Balance</div>
-                      <div className="mt-2 text-xl font-bold text-slate-900">{balance}</div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-            <SectionCard title={queueLabel} action={<StatusPill>Approval trail enabled</StatusPill>}>
-              <div className="space-y-3">
-                {visibleLeaveRequests.length > 0 ? (
-                  visibleLeaveRequests.map((row) => {
-                    const isEmployeeOwner = row.employeeId === activeAccount.id;
-                    const canCancel = currentRole === "Employee" && isEmployeeOwner && row.status === "Submitted";
-                    const isManagerQueue = currentRole === "Manager" && row.status === "Submitted";
-                    const isHrQueue = currentRole === "HR" && row.status === "Manager Approved";
-                    const reviewNote = leaveReviewNotes[row.id] ?? row.reviewNote ?? "";
-
-                    return (
-                      <div key={row.id} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-200">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                          <div>
-                            <div className="text-base font-semibold text-slate-900">{row.type}</div>
-                            <div className="mt-1 text-sm text-slate-500">{row.employeeName} - {row.range}</div>
-                            <div className="mt-1 text-sm leading-6 text-slate-500">{row.reason}</div>
-                            <div className="mt-2 text-xs text-slate-400">Requested: {row.requestedAt}</div>
-                            {row.approverName && row.decisionDate && (
-                              <div className="mt-1 text-xs text-slate-400">Last decision: {row.approverName} on {row.decisionDate}</div>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            <StatusPill>{row.status}</StatusPill>
-                            {row.status === "Cancelled" && <StatusPill>Locked</StatusPill>}
-                            {canCancel && <button onClick={() => cancelLeaveRequest(row.id)} className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">Cancel</button>}
-                          </div>
-                        </div>
-
-                        <div className="mt-4 rounded-2xl bg-slate-50 p-4">
-                          <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Approval trail</div>
-                          <div className="mt-3 space-y-2">
-                            {row.trail.map((step) => (
-                              <div key={`${row.id}-${step.status}-${step.date}-${step.actorName}`} className="rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-600">
-                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                  <div className="font-semibold text-slate-900">{step.status}</div>
-                                  <div className="text-xs text-slate-400">{step.date}</div>
-                                </div>
-                                <div className="mt-1 text-xs text-slate-500">{step.actorName}</div>
-                                {step.note && <div className="mt-1 text-sm leading-6 text-slate-500">{step.note}</div>}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {(isManagerQueue || isHrQueue) && (
-                          <div className="mt-4 space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <div className="text-sm font-semibold text-slate-900">{currentRole === "Manager" ? "Manager review note" : "HR review note"}</div>
-                            <textarea
-                              value={reviewNote}
-                              onChange={(e) => setLeaveReviewNotes((prev) => ({ ...prev, [row.id]: e.target.value }))}
-                              placeholder="Short review note"
-                              className="min-h-[90px] w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm"
-                            />
-                            <div className="flex flex-wrap gap-2">
-                              <button
-                                onClick={() => updateLeaveStatus(row.id, currentRole === "Manager" ? "Manager Approved" : "HR Approved", reviewNote)}
-                                className="rounded-xl bg-slate-950 px-3 py-2 text-xs font-semibold text-white"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => updateLeaveStatus(row.id, currentRole === "Manager" ? "Manager Rejected" : "HR Rejected", reviewNote)}
-                                className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700"
-                              >
-                                Reject
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
-                    {currentRole === "Employee"
-                      ? "No leave requests have been filed yet. Submit your first request on the right."
-                      : currentRole === "Manager"
-                        ? "No leave requests are waiting for manager review right now."
-                        : currentRole === "HR"
-                          ? "No leave requests are waiting for HR review right now."
-                          : "No leave requests are available in this view."}
-                  </div>
-                )}
-              </div>
-            </SectionCard>
-
-            <SectionCard title={activePage === "Leave Approvals" ? "Approval Flow" : "Request New Leave"} action={<StatusPill>Quick submit</StatusPill>}>
-              <div className="space-y-4 text-sm text-slate-600">
-                <div className="rounded-3xl bg-slate-50 p-4">
-                  <div className="text-sm font-semibold text-slate-900">Flow</div>
-                  <p className="mt-2 leading-6">Employee files request - Manager reviews - HR final approval.</p>
-                </div>
-                {currentRole === "Employee" && (
-                  <div className="space-y-3">
-                    <select value={newLeaveType} onChange={(e) => setNewLeaveType(e.target.value)} className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm">
-                      {leaveTypes.map((item) => (
-                        <option key={item}>{item}</option>
-                      ))}
-                    </select>
-                    <input value={newLeaveRange} onChange={(e) => setNewLeaveRange(e.target.value)} placeholder="Example: May 10-11" className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm" />
-                    <textarea value={newLeaveReason} onChange={(e) => setNewLeaveReason(e.target.value)} placeholder="Reason" className="min-h-[120px] w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm" />
-                    <button onClick={submitLeave} className="w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white">Submit Leave Request</button>
-                  </div>
-                )}
-                {currentRole !== "Employee" && <div className="rounded-3xl bg-slate-50 p-4 leading-6">Use the request list to approve or reject submitted requests.</div>}
-              </div>
-            </SectionCard>
-          </div>
-        </div>
-      );
-    })()
-  );
-
+  const renderLeave = () => {
+    return (
+      <LeaveManagement
+        currentRole={currentRole}
+        activeAccount={activeAccount}
+        activePage={activePage}
+        leaveRequests={leaveRequests}
+        filteredLeaveRequests={filteredLeaveRequests}
+        leaveReviewNotes={leaveReviewNotes}
+        newLeaveType={newLeaveType}
+        newLeaveRange={newLeaveRange}
+        newLeaveReason={newLeaveReason}
+        setLeaveReviewNotes={setLeaveReviewNotes}
+        setNewLeaveType={setNewLeaveType}
+        setNewLeaveRange={setNewLeaveRange}
+        setNewLeaveReason={setNewLeaveReason}
+        submitLeave={submitLeave}
+        cancelLeaveRequest={cancelLeaveRequest}
+        updateLeaveStatus={updateLeaveStatus}
+      />
+    );
+  };
   const renderPayslips = () => {
     const selected = selectedPayslipPeriod ? payslipDetailMap[selectedPayslipPeriod] : null;
     const hasPayslipSelection = Boolean(selectedPayslipPeriod);
@@ -2901,7 +2676,7 @@ export default function EmployeePortalPrototype() {
             </div>
           </SectionCard>
 
-          <SectionCard title={selectedPayslipPeriod ? `Earnings Statement â€¢ ${selectedPayslipPeriod}` : "Earnings Statement"} action={<StatusPill>Mobile-friendly</StatusPill>}>
+          <SectionCard title={selectedPayslipPeriod ? `Earnings Statement • ${selectedPayslipPeriod}` : "Earnings Statement"} action={<StatusPill>Mobile-friendly</StatusPill>}>
             {selected && selectedPayslipPeriod ? (
               <div className="space-y-4">
                 <div className="rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-200">
@@ -2992,906 +2767,144 @@ export default function EmployeePortalPrototype() {
     </div>
   );
 
-  const renderWriteups = () => {
-    const selected = selectedWriteupRecord;
-    const canManageWriteups = currentRole === "Manager" || currentRole === "HR" || currentRole === "Admin";
-    const canEmployeeAct = currentRole === "Employee" && selected?.employeeId === activeAccount.id;
-
+  const renderWriteups = () => (
+    <WriteupManagement
+      currentRole={currentRole}
+      activeAccount={activeAccount}
+      activeEmployeeRecords={activeEmployeeRecords}
+      filteredWriteups={filteredWriteups}
+      selectedWriteupId={selectedWriteupId}
+      selectedWriteupRecord={selectedWriteupRecord}
+      selectedWriteupSignatureMethod={selectedWriteupSignatureMethod}
+      newWriteupEmployeeId={newWriteupEmployeeId}
+      newWriteupCategory={newWriteupCategory}
+      newWriteupSeverity={newWriteupSeverity}
+      newWriteupAcknowledgmentRequired={newWriteupAcknowledgmentRequired}
+      newWriteupSignatureRequired={newWriteupSignatureRequired}
+      newWriteupTitle={newWriteupTitle}
+      openWriteup={openWriteup}
+      releaseWriteup={releaseWriteup}
+      acknowledgeWriteup={acknowledgeWriteup}
+      signWriteup={signWriteup}
+      closeWriteup={closeWriteup}
+      addWriteup={addWriteup}
+      setSelectedWriteupSignatureMethod={setSelectedWriteupSignatureMethod}
+      setNewWriteupEmployeeId={setNewWriteupEmployeeId}
+      setNewWriteupCategory={setNewWriteupCategory}
+      setNewWriteupSeverity={setNewWriteupSeverity}
+      setNewWriteupAcknowledgmentRequired={setNewWriteupAcknowledgmentRequired}
+      setNewWriteupSignatureRequired={setNewWriteupSignatureRequired}
+      setNewWriteupTitle={setNewWriteupTitle}
+    />
+  );
+  const renderPolicies = () => {
     return (
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <SectionCard title={currentRole === "Employee" ? "My Writeups" : "Writeup Records"} action={<StatusPill>{filteredWriteups.length} record(s)</StatusPill>}>
-          <div className="space-y-3">
-            {filteredWriteups.length > 0 ? (
-              filteredWriteups.map((item) => {
-                const isSelected = item.id === selectedWriteupId;
-
-                return (
-                  <div key={item.id} className={`rounded-2xl border p-4 ${isSelected ? "border-slate-950 bg-slate-50" : "border-slate-200 bg-white"}`}>
-                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                      <div>
-                        <div className="text-base font-semibold">{item.title}</div>
-                        <div className="mt-1 text-sm text-slate-500">{item.employee}</div>
-                        <div className="mt-1 text-xs text-slate-400">Issued: {item.createdAt}</div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <StatusPill>{item.category}</StatusPill>
-                        <StatusPill>{item.status}</StatusPill>
-                        <StatusPill>{item.severity}</StatusPill>
-                        <StatusPill>{item.acknowledgmentRequired ? "Ack required" : "Ack optional"}</StatusPill>
-                        <StatusPill>{item.signatureRequired ? "Signature required" : "No signature"}</StatusPill>
-                      </div>
-                    </div>
-                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
-                      <span>{item.status === "Pending Review" ? "Receipt / review only, not agreement." : "Open to view the receipt and review trail."}</span>
-                      <button onClick={() => openWriteup(item.id)} className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">Open Writeup</button>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
-                {currentRole === "Employee"
-                  ? "No writeup records are available for this account yet. Employee writeups assigned to you will appear here."
-                  : "No writeup records are available yet. Create one from the panel on the right or wait for records to sync in."}
-              </div>
-            )}
-          </div>
-        </SectionCard>
-
-        <div className="space-y-6">
-          <SectionCard title={selected ? `Writeup Viewer • ${selected.title}` : "Writeup Viewer"}>
-            {selected ? (
-              <div className="space-y-4">
-                <div className="rounded-2xl border border-slate-200 p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="text-sm text-slate-500">{selected.category}</div>
-                      <div className="text-lg font-bold">{selected.title}</div>
-                      <div className="mt-1 text-xs text-slate-400">For {selected.employee} • {selected.createdAt}</div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <StatusPill>{selected.status}</StatusPill>
-                      <StatusPill>{selected.acknowledgmentRequired ? "Ack required" : "Ack optional"}</StatusPill>
-                      <StatusPill>{selected.signatureRequired ? "Signature required" : "No signature"}</StatusPill>
-                    </div>
-                  </div>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">Acknowledgment and signature only confirm receipt and review of this writeup. They do not automatically mean agreement.</p>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">Requested by: {selected.employee}</div>
-                    <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">Released: {selected.releasedAt ?? "Not released yet"}</div>
-                    <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">Acknowledged: {selected.acknowledgedBy ? `${selected.acknowledgedBy} • ${selected.acknowledgedAt}` : "Not yet"}</div>
-                    <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">Signed: {selected.signedBy ? `${selected.signedBy} • ${selected.signedAt}` : "Not yet"}</div>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 p-4">
-                  <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">Receipt and review trail</div>
-                  <div className="mt-4 space-y-3">
-                    {selected.trail.map((entry) => (
-                      <div key={`${selected.id}-${entry.action}-${entry.dateTime}`} className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="font-semibold text-slate-900">{entry.action}</div>
-                          <div className="text-xs text-slate-400">{entry.dateTime}</div>
-                        </div>
-                        <div className="mt-1 text-xs text-slate-500">{entry.actorName}</div>
-                        {entry.signatureMethod && <div className="mt-1 text-xs text-slate-500">Method: {entry.signatureMethod}</div>}
-                        {entry.note && <div className="mt-1 leading-6 text-slate-500">{entry.note}</div>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {selected.status === "Pending Review" && canManageWriteups && (
-                  <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                    <div className="font-semibold text-slate-900">Release writeup</div>
-                    <p className="mt-2 leading-6">Move this writeup into the employee review flow. Acknowledgment and signature remain separate from agreement.</p>
-                    <button onClick={() => releaseWriteup(selected.id)} className="mt-4 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">Release Writeup</button>
-                  </div>
-                )}
-
-                {canEmployeeAct && selected.status === "Pending Acknowledgment" && (
-                  <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                    <div className="font-semibold text-slate-900">Acknowledge receipt</div>
-                    <p className="mt-2 leading-6">Acknowledgment confirms receipt and review, not agreement with the writeup.</p>
-                    <button onClick={() => acknowledgeWriteup(selected.id)} className="mt-4 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">Acknowledge Receipt</button>
-                  </div>
-                )}
-
-                {canEmployeeAct && selected.status === "Pending Signature" && (
-                  <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                    <div className="font-semibold text-slate-900">Signature required</div>
-                    <p className="mt-2 leading-6">Signature confirms receipt and review, not automatic agreement.</p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {(["Registered Signature", "Freeform Signature"] as WriteupSignatureMethod[]).map((method) => (
-                        <button key={method} onClick={() => setSelectedWriteupSignatureMethod(method)} className={`rounded-full px-3 py-2 text-xs font-semibold ${selectedWriteupSignatureMethod === method ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-700"}`}>{method}</button>
-                      ))}
-                    </div>
-                    <button onClick={() => signWriteup(selected.id, selectedWriteupSignatureMethod)} className="mt-4 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">Apply signature</button>
-                  </div>
-                )}
-
-                {(selected.status === "Acknowledged" || selected.status === "Signed") && canManageWriteups && (
-                  <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                    <div className="font-semibold text-slate-900">Close writeup</div>
-                    <p className="mt-2 leading-6">Mark the writeup closed once review is complete.</p>
-                    <button onClick={() => closeWriteup(selected.id)} className="mt-4 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">Close Writeup</button>
-                  </div>
-                )}
-
-                {selected.status === "Closed" && (
-                  <div className="rounded-2xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">Writeup is closed.</div>
-                )}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-500">Open a writeup to review receipt, acknowledgment, and signature details.</div>
-            )}
-          </SectionCard>
-
-          {canManageWriteups ? (
-            <SectionCard title="Create Writeup">
-              <div className="space-y-3">
-                <select value={newWriteupEmployeeId} onChange={(e) => setNewWriteupEmployeeId(e.target.value)} className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm">
-                  {activeEmployeeRecords.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                </select>
-                <select value={newWriteupCategory} onChange={(e) => setNewWriteupCategory(e.target.value)} className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm">
-                  {['Attendance', 'Incident Report', 'Performance', 'Commendation', 'Coaching'].map((item) => <option key={item}>{item}</option>)}
-                </select>
-                <select value={newWriteupSeverity} onChange={(e) => setNewWriteupSeverity(e.target.value)} className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm">
-                  {['Minor', 'Moderate', 'Major', 'Positive'].map((item) => <option key={item}>{item}</option>)}
-                </select>
-
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="text-sm font-semibold text-slate-900">Acknowledgment required</div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <button onClick={() => setNewWriteupAcknowledgmentRequired(true)} className={`rounded-full px-3 py-2 text-xs font-semibold ${newWriteupAcknowledgmentRequired ? 'bg-slate-950 text-white' : 'border border-slate-200 bg-white text-slate-700'}`}>Yes</button>
-                    <button onClick={() => setNewWriteupAcknowledgmentRequired(false)} className={`rounded-full px-3 py-2 text-xs font-semibold ${!newWriteupAcknowledgmentRequired ? 'bg-slate-950 text-white' : 'border border-slate-200 bg-white text-slate-700'}`}>No</button>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="text-sm font-semibold text-slate-900">Signature required</div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <button onClick={() => setNewWriteupSignatureRequired(true)} className={`rounded-full px-3 py-2 text-xs font-semibold ${newWriteupSignatureRequired ? 'bg-slate-950 text-white' : 'border border-slate-200 bg-white text-slate-700'}`}>Yes</button>
-                    <button onClick={() => setNewWriteupSignatureRequired(false)} className={`rounded-full px-3 py-2 text-xs font-semibold ${!newWriteupSignatureRequired ? 'bg-slate-950 text-white' : 'border border-slate-200 bg-white text-slate-700'}`}>No</button>
-                  </div>
-                </div>
-
-                <input value={newWriteupTitle} onChange={(e) => setNewWriteupTitle(e.target.value)} placeholder="Writeup title" className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm" />
-                <button onClick={addWriteup} className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white">Add Writeup</button>
-              </div>
-            </SectionCard>
-          ) : (
-            <SectionCard title="Create Writeup">
-              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">Employees can open writeups here and complete acknowledgment or signature when required.</div>
-            </SectionCard>
-          )}
-        </div>
-      </div>
-    );
-  };  const renderPolicies = () => {
-    const hasPolicySelection = Boolean(selectedPolicyTitle);
-    const selectedPolicyBody = selectedPolicyRecord ? selectedPolicyRecord.content.split("\n").map((line) => line.trim()).filter(Boolean) : [];
-    const selectedPolicyAssignedCount = selectedPolicyRecord ? activeEmployeeRecords.filter((item) => selectedPolicyRecord.assignedRoles.includes(item.role)).length : 0;
-    const selectedPolicyStatus = currentRole === "Employee" ? (selectedPolicySignature ? "Signed" : "Pending") : (selectedPolicyRecord?.status ?? "Draft");
-
-    return (
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <SectionCard
-          title={currentRole === "Employee" ? "Assigned Policies" : "Company Policies"}
-          action={<StatusPill>{currentRole === "Employee" ? `${employeeAssignedPolicyCount} assigned` : `${visiblePolicies.length} total`}</StatusPill>}
-        >
-          <div className="space-y-3">
-            {visiblePolicies.length > 0 ? (
-              visiblePolicies.map((item) => {
-                const signature = policySignatures.find((entry) => entry.policyId === item.id && entry.employeeId === activeAccount.id) ?? null;
-                const listStatus = currentRole === "Employee" ? (signature ? "Signed" : "Pending") : item.status;
-                const assignedCount = activeEmployeeRecords.filter((account) => item.assignedRoles.includes(account.role)).length;
-
-                return (
-                  <div key={item.id} className="rounded-2xl border border-slate-200 p-4">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                      <div>
-                        <div className="font-semibold">{item.title}</div>
-                        <div className="mt-1 text-sm text-slate-500">{item.category}</div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <StatusPill>{listStatus}</StatusPill>
-                        <StatusPill>{item.required ? "Required" : "Optional"}</StatusPill>
-                        {currentRole !== "Employee" && <StatusPill>{assignedCount} assigned</StatusPill>}
-                      </div>
-                    </div>
-                    <div className="mt-3 flex flex-col gap-3 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-                      <span>
-                        {currentRole === "Employee"
-                          ? signature
-                            ? `Signed by ${signature.employeeName} on ${signature.signedAt}`
-                            : "Waiting for your signature"
-                          : item.status === "Published"
-                            ? `Published ${item.publishedAt ?? item.createdAt}`
-                            : `Draft created ${item.createdAt}`}
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        <button onClick={() => openPolicy(item.title)} className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">Open Policy</button>
-                        {currentRole === "Admin" && item.status === "Draft" && (
-                          <button onClick={() => publishPolicy(item.id)} className="rounded-xl bg-slate-950 px-3 py-2 text-xs font-semibold text-white">Publish</button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
-                {currentRole === "Employee"
-                  ? "No policies are assigned to this account yet."
-                  : "No policies are available yet. Create one below to start the workflow."}
-              </div>
-            )}
-          </div>
-        </SectionCard>
-
-        <div className="space-y-6">
-          <SectionCard title={selectedPolicyRecord ? `Policy Viewer • ${selectedPolicyRecord.title}` : "Policy Viewer"}>
-            {selectedPolicyRecord && selectedPolicyTitle ? (
-              <div className="space-y-4">
-                <div className="rounded-2xl border border-slate-200 p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="text-sm text-slate-500">{selectedPolicyRecord.category}</div>
-                      <div className="text-lg font-bold">{selectedPolicyRecord.title}</div>
-                      <div className="mt-1 text-xs text-slate-400">Created by {selectedPolicyRecord.createdBy} • {selectedPolicyRecord.createdAt}</div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <StatusPill>{selectedPolicyStatus}</StatusPill>
-                      <StatusPill>{selectedPolicyRecord.required ? "Required" : "Optional"}</StatusPill>
-                      <StatusPill>{selectedPolicyAssignedCount} role(s)</StatusPill>
-                    </div>
-                  </div>
-                  <p className="mt-3 text-sm text-slate-600">{selectedPolicyBody[0] ?? "Policy details are available below."}</p>
-                  <div className="mt-4 space-y-3">{selectedPolicyBody.map((line) => <div key={line} className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">{line}</div>)}</div>
-                </div>
-
-                <div className="space-y-4 rounded-2xl border border-slate-200 p-4">
-                  <div>
-                    <div className="text-sm font-semibold">Signing method</div>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {(["Registered Signature", "Freeform Signature", "Acknowledge Only"] as PolicyMethod[]).map((item) => (
-                        <button key={item} onClick={() => { setSelectedPolicyMethod(item); setFreeformSigned(false); setRegisteredConfirmed(false); setPolicyAcknowledged(false); }} className={`rounded-full px-3 py-2 text-xs font-semibold ${selectedPolicyMethod === item ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-700"}`}>{item}</button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {selectedPolicySignature && (
-                    <div className="rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-800">
-                      Signed by {selectedPolicySignature.employeeName} on {selectedPolicySignature.signedAt}
-                    </div>
-                  )}
-
-                  {selectedPolicyMethod === "Registered Signature" && (
-                    <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                      <div className="font-semibold text-slate-900">Identity confirmation</div>
-                      <div className="mt-3 space-y-2">
-                        <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">Last name: {activeAccount.name.split(" ").slice(-1)[0]}</div>
-                        <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">Date of birth verification prompt</div>
-                      </div>
-                      <button onClick={() => { setRegisteredConfirmed(true); signCurrentPolicy("Registered Signature"); }} className="mt-4 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">Confirm and apply registered signature</button>
-                      {registeredConfirmed && <div className="mt-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">Registered signature applied successfully.</div>}
-                    </div>
-                  )}
-                  {selectedPolicyMethod === "Freeform Signature" && (
-                    <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                      <div className="font-semibold text-slate-900">Freeform signature pad</div>
-                      <div className="mt-3 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-400">Device signature area</div>
-                      <button onClick={() => { setFreeformSigned(true); signCurrentPolicy("Freeform Signature"); }} className="mt-4 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">Save freeform signature</button>
-                      {freeformSigned && <div className="mt-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">Freeform signature saved for this policy.</div>}
-                    </div>
-                  )}
-                  {selectedPolicyMethod === "Acknowledge Only" && (
-                    <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                      <div className="font-semibold text-slate-900">Acknowledge policy</div>
-                      <p className="mt-2">Employee confirms that the policy has been read and understood.</p>
-                      <button onClick={() => { setPolicyAcknowledged(true); signCurrentPolicy("Acknowledge Only"); }} className="mt-4 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">Acknowledge policy</button>
-                      {policyAcknowledged && <div className="mt-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">Policy acknowledged successfully.</div>}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : hasPolicySelection ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
-                The selected policy no longer matches any available policy details. Please reopen a policy from the list to continue safely.
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-500">Open a policy from the list to preview the document and signing flow.</div>
-            )}
-          </SectionCard>
-
-          {currentRole === "Admin" && (
-            <SectionCard title="Create Policy" action={<StatusPill>Admin only</StatusPill>}>
-              <div className="space-y-3">
-                <input value={newPolicyTitle} onChange={(e) => setNewPolicyTitle(e.target.value)} placeholder="Policy title" className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm" />
-                <input value={newPolicyCategory} onChange={(e) => setNewPolicyCategory(e.target.value)} placeholder="Category" className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm" />
-                <textarea value={newPolicyContent} onChange={(e) => setNewPolicyContent(e.target.value)} placeholder="Policy content" className="min-h-[160px] w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm" />
-
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="text-sm font-semibold text-slate-900">Required</div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <button onClick={() => setNewPolicyRequired(true)} className={`rounded-full px-3 py-2 text-xs font-semibold ${newPolicyRequired ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-700"}`}>Yes</button>
-                    <button onClick={() => setNewPolicyRequired(false)} className={`rounded-full px-3 py-2 text-xs font-semibold ${!newPolicyRequired ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-700"}`}>No</button>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="text-sm font-semibold text-slate-900">Assigned roles</div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {availableRoles.map((role) => {
-                      const isSelected = newPolicyAssignedRoles.includes(role);
-                      return (
-                        <button
-                          key={role}
-                          onClick={() => setNewPolicyAssignedRoles((prev) => prev.includes(role) ? prev.filter((item) => item !== role) : [...prev, role])}
-                          className={`rounded-full px-3 py-2 text-xs font-semibold ${isSelected ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-700"}`}
-                        >
-                          {role}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <button onClick={() => createPolicy(false)} className="rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700">Save Draft</button>
-                  <button onClick={() => createPolicy(true)} className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white">Publish Policy</button>
-                </div>
-              </div>
-            </SectionCard>
-          )}
-        </div>
-      </div>
+      <PolicyManagement
+        currentRole={currentRole}
+        activeAccount={activeAccount}
+        activeEmployeeRecords={activeEmployeeRecords}
+        visiblePolicies={visiblePolicies}
+        selectedPolicyTitle={selectedPolicyTitle}
+        selectedPolicyRecord={selectedPolicyRecord}
+        selectedPolicySignature={selectedPolicySignature}
+        selectedPolicyMethod={selectedPolicyMethod}
+        newPolicyTitle={newPolicyTitle}
+        newPolicyCategory={newPolicyCategory}
+        newPolicyContent={newPolicyContent}
+        newPolicyRequired={newPolicyRequired}
+        newPolicyAssignedRoles={newPolicyAssignedRoles}
+        availableRoles={availableRoles}
+        employeeAssignedPolicyCount={employeeAssignedPolicyCount}
+        selectedPolicyStatus={currentRole === "Employee" ? (selectedPolicySignature ? "Signed" : "Pending") : (selectedPolicyRecord?.status ?? "Draft")}
+        openPolicy={openPolicy}
+        publishPolicy={publishPolicy}
+        signCurrentPolicy={signCurrentPolicy}
+        createPolicy={createPolicy}
+        setSelectedPolicyMethod={setSelectedPolicyMethod}
+        setFreeformSigned={setFreeformSigned}
+        setRegisteredConfirmed={setRegisteredConfirmed}
+        setPolicyAcknowledged={setPolicyAcknowledged}
+        setNewPolicyTitle={setNewPolicyTitle}
+        setNewPolicyCategory={setNewPolicyCategory}
+        setNewPolicyContent={setNewPolicyContent}
+        setNewPolicyRequired={setNewPolicyRequired}
+        setNewPolicyAssignedRoles={setNewPolicyAssignedRoles}
+      />
     );
   };
 
   const renderTraining = () => {
-    const selected = selectedTrainingRecord;
-    const selectedQuestions = selected ? getTrainingQuizQuestions(selected) : [];
-    const quizScore = selected ? getTrainingScore(selected, quizAnswers) : { score: 0, total: 0 };
-    const hasTrainingSelection = Boolean(selectedTrainingTitle);
-    const employeeStatus = selectedTrainingProgress?.status ?? (selected ? "Assigned" : "Assigned");
-    const selectedEmployeeCompletion = selectedTrainingProgress?.completionDate ?? null;
+    const selectedQuestions = selectedTrainingRecord ? getTrainingQuizQuestions(selectedTrainingRecord) : [];
+    const quizScore = selectedTrainingRecord ? getTrainingScore(selectedTrainingRecord, quizAnswers) : { score: 0, total: 0 };
 
     return (
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <SectionCard title={currentRole === "Employee" ? "Assigned Training" : "Training Modules"} action={<StatusPill>{currentRole === "Employee" ? `${employeeAssignedTrainingCount} assigned` : `${visibleTraining.length} total`}</StatusPill>}>
-          <div className="space-y-3">
-            {visibleTraining.length > 0 ? (
-              visibleTraining.map((item) => {
-                const progress = trainingProgress.find((entry) => entry.moduleId === item.id && entry.employeeId === activeAccount.id) ?? null;
-                const listStatus = currentRole === "Employee" ? (progress?.status ?? "Assigned") : item.status;
-                const assignedCount = activeEmployeeRecords.filter((account) => item.assignedRoles.includes(account.role)).length;
-
-                return (
-                  <div key={item.id} className="rounded-2xl border border-slate-200 p-4">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                      <div>
-                        <div className="font-semibold">{item.title}</div>
-                        <div className="mt-1 text-sm text-slate-500">{item.category}</div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <StatusPill>{listStatus}</StatusPill>
-                        <StatusPill>{item.required ? "Required" : "Optional"}</StatusPill>
-                        <StatusPill>{item.quizRequired ? `Quiz ${item.passingScore}+` : "No quiz"}</StatusPill>
-                        {currentRole !== "Employee" && <StatusPill>{assignedCount} assigned</StatusPill>}
-                      </div>
-                    </div>
-                    <div className="mt-3 text-sm leading-6 text-slate-600">{item.description}</div>
-                    <div className="mt-3 flex flex-col gap-3 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-                      <span>
-                        {currentRole === "Employee"
-                          ? progress
-                            ? progress.status === "Completed"
-                              ? `Completed by ${progress.employeeName} on ${progress.completionDate ?? item.publishedAt ?? item.createdAt}`
-                              : progress.status === "Failed"
-                                ? `Last attempt by ${progress.employeeName} on ${progress.completionDate ?? item.publishedAt ?? item.createdAt}`
-                                : `In progress for ${progress.employeeName}`
-                            : "Waiting for your assignment"
-                          : item.status === "Published"
-                            ? `Published ${item.publishedAt ?? item.createdAt}`
-                            : `Draft created ${item.createdAt}`}
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        <button onClick={() => openTraining(item.title)} className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">Open Training</button>
-                        {currentRole === "Admin" && item.status === "Draft" && (
-                          <button onClick={() => publishTraining(item.id)} className="rounded-xl bg-slate-950 px-3 py-2 text-xs font-semibold text-white">Publish / Assign</button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
-                {currentRole === "Employee"
-                  ? "No training modules are assigned to this account yet."
-                  : "No training modules are available yet. Create one below to start the workflow."}
-              </div>
-            )}
-          </div>
-        </SectionCard>
-
-        <div className="space-y-6">
-          <SectionCard title={selected ? `Training Viewer • ${selected.title}` : "Training Viewer"}>
-            {selected && selectedTrainingTitle ? (
-              <div className="space-y-4">
-                <div className="rounded-2xl border border-slate-200 p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="text-sm text-slate-500">{selected.category}</div>
-                      <div className="text-lg font-bold">{selected.title}</div>
-                      <div className="mt-1 text-xs text-slate-400">Created by {selected.createdBy} • {selected.createdAt}</div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <StatusPill>{employeeStatus}</StatusPill>
-                      <StatusPill>{selected.required ? "Required" : "Optional"}</StatusPill>
-                      <StatusPill>{selected.quizRequired ? `Passing ${selected.passingScore}%` : "No quiz"}</StatusPill>
-                    </div>
-                  </div>
-                  <p className="mt-3 text-sm text-slate-600">{selected.description}</p>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">{selected.video}</div>
-                    <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">{selected.restriction}</div>
-                  </div>
-                </div>
-
-                {selectedTrainingProgress?.status === "Completed" && (
-                  <div className="rounded-2xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">
-                    Completed on {selectedEmployeeCompletion ?? "this session"} with score {selectedTrainingProgress.score ?? 0}/{selectedQuestions.length}.
-                  </div>
-                )}
-                {selectedTrainingProgress?.status === "Failed" && (
-                  <div className="rounded-2xl bg-rose-50 p-4 text-sm font-semibold text-rose-700">
-                    Last attempt did not meet the passing score. Current score: {selectedTrainingProgress.score ?? 0}/{selectedQuestions.length}.
-                  </div>
-                )}
-
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-500">
-                  Embedded training video area
-                  <div className="mt-3 text-sm">First play: skipping disabled • AFK monitoring enabled • Quiz unlocks after watch compliance</div>
-                </div>
-
-                {selected.quizRequired ? (
-                  <div className="rounded-2xl border border-slate-200 p-4">
-                    <div className="text-base font-semibold">Quiz</div>
-                    <div className="mt-2 text-sm text-slate-500">Passing score: {selected.passingScore}%</div>
-                    <div className="mt-4 space-y-4">
-                      {selectedQuestions.map((question) => (
-                        <div key={question.id} className="rounded-2xl bg-slate-50 p-4">
-                          <div className="font-medium">{question.question}</div>
-                          <div className="mt-3 grid gap-2">
-                            {question.options.map((option) => (
-                              <button key={option} onClick={() => setQuizAnswers((prev) => ({ ...prev, [question.id]: option }))} className={`rounded-xl border px-3 py-2 text-left text-sm ${quizAnswers[question.id] === option ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white text-slate-700"}`}>{option}</button>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <button onClick={() => submitTrainingQuiz(selected)} className="mt-4 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">Submit quiz</button>
-                    {trainingQuizSubmitted && (
-                      <div className={`mt-4 rounded-2xl px-4 py-3 text-sm font-semibold ${quizScore.score >= Math.ceil((selected.passingScore / 100) * quizScore.total) ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
-                        Quiz submitted. Score: {quizScore.score}/{quizScore.total}
-                        {quizScore.score >= Math.ceil((selected.passingScore / 100) * quizScore.total) ? " - Passed" : " - Failed"}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-600">
-                    This module does not require a quiz. Mark it complete when you finish reviewing the content.
-                    <button onClick={() => markTrainingComplete(selected)} className="mt-4 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">Mark complete</button>
-                  </div>
-                )}
-              </div>
-            ) : hasTrainingSelection ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
-                The selected training module no longer matches any available training details. Please reopen a module from the list to continue safely.
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-500">Open a training module to preview the content and quiz experience.</div>
-            )}
-          </SectionCard>
-
-          {currentRole === "Admin" && (
-            <SectionCard title="Create Training" action={<StatusPill>Admin only</StatusPill>}>
-              <div className="space-y-3">
-                <input value={newTrainingTitle} onChange={(e) => setNewTrainingTitle(e.target.value)} placeholder="Training title" className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm" />
-                <input value={newTrainingCategory} onChange={(e) => setNewTrainingCategory(e.target.value)} placeholder="Category" className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm" />
-                <textarea value={newTrainingDescription} onChange={(e) => setNewTrainingDescription(e.target.value)} placeholder="Training description" className="min-h-[160px] w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm" />
-
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="text-sm font-semibold text-slate-900">Required</div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <button onClick={() => setNewTrainingRequired(true)} className={`rounded-full px-3 py-2 text-xs font-semibold ${newTrainingRequired ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-700"}`}>Yes</button>
-                    <button onClick={() => setNewTrainingRequired(false)} className={`rounded-full px-3 py-2 text-xs font-semibold ${!newTrainingRequired ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-700"}`}>No</button>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="text-sm font-semibold text-slate-900">Assigned roles</div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {availableRoles.map((role) => {
-                      const isSelected = newTrainingAssignedRoles.includes(role);
-                      return (
-                        <button key={role} onClick={() => setNewTrainingAssignedRoles((prev) => prev.includes(role) ? prev.filter((item) => item !== role) : [...prev, role])} className={`rounded-full px-3 py-2 text-xs font-semibold ${isSelected ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-700"}`}>
-                          {role}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl bg-slate-50 p-4">
-                    <div className="text-sm font-semibold text-slate-900">Quiz required</div>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <button onClick={() => setNewTrainingQuizRequired(true)} className={`rounded-full px-3 py-2 text-xs font-semibold ${newTrainingQuizRequired ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-700"}`}>Yes</button>
-                      <button onClick={() => setNewTrainingQuizRequired(false)} className={`rounded-full px-3 py-2 text-xs font-semibold ${!newTrainingQuizRequired ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-700"}`}>No</button>
-                    </div>
-                  </div>
-                  <div className="rounded-2xl bg-slate-50 p-4">
-                    <div className="text-sm font-semibold text-slate-900">Passing score</div>
-                    <input type="number" min={0} max={100} value={newTrainingPassingScore} onChange={(e) => setNewTrainingPassingScore(Number(e.target.value) || 0)} className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm" />
-                  </div>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <button onClick={() => createTraining(false)} className="rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700">Save Draft</button>
-                  <button onClick={() => createTraining(true)} className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white">Publish / Assign</button>
-                </div>
-              </div>
-            </SectionCard>
-          )}
-        </div>
-      </div>
+      <TrainingManagement
+        currentRole={currentRole}
+        activeAccount={activeAccount}
+        activeEmployeeRecords={activeEmployeeRecords}
+        visibleTraining={visibleTraining}
+        trainingProgress={trainingProgress}
+        selectedTrainingTitle={selectedTrainingTitle}
+        selectedTrainingRecord={selectedTrainingRecord}
+        selectedTrainingProgress={selectedTrainingProgress}
+        selectedQuestions={selectedQuestions}
+        quizScore={quizScore}
+        trainingQuizSubmitted={trainingQuizSubmitted}
+        quizAnswers={quizAnswers}
+        employeeAssignedTrainingCount={employeeAssignedTrainingCount}
+        newTrainingTitle={newTrainingTitle}
+        newTrainingCategory={newTrainingCategory}
+        newTrainingDescription={newTrainingDescription}
+        newTrainingRequired={newTrainingRequired}
+        newTrainingAssignedRoles={newTrainingAssignedRoles}
+        newTrainingQuizRequired={newTrainingQuizRequired}
+        newTrainingPassingScore={newTrainingPassingScore}
+        availableRoles={availableRoles}
+        openTraining={openTraining}
+        publishTraining={publishTraining}
+        markTrainingComplete={markTrainingComplete}
+        submitTrainingQuiz={submitTrainingQuiz}
+        createTraining={createTraining}
+        setQuizAnswers={setQuizAnswers}
+        setNewTrainingTitle={setNewTrainingTitle}
+        setNewTrainingCategory={setNewTrainingCategory}
+        setNewTrainingDescription={setNewTrainingDescription}
+        setNewTrainingRequired={setNewTrainingRequired}
+        setNewTrainingAssignedRoles={setNewTrainingAssignedRoles}
+        setNewTrainingQuizRequired={setNewTrainingQuizRequired}
+        setNewTrainingPassingScore={setNewTrainingPassingScore}
+      />
     );
   };
 
   const renderSchedule = () => {
-    const todayISO = getLocalISODate();
-    const sortKey = (dateISO: string) => {
-      const parsed = Date.parse(dateISO);
-      return Number.isNaN(parsed) ? 0 : parsed;
-    };
-    const derivedLeaveEntries: ScheduleEntry[] = leaveRequests
-      .filter((item) => item.status === "HR Approved")
-      .map((item) => {
-        const parsedDecision = item.decisionDate ? Date.parse(item.decisionDate) : Number.NaN;
-        const dateISO = Number.isNaN(parsedDecision)
-          ? todayISO
-          : `${new Date(parsedDecision).getFullYear()}-${String(new Date(parsedDecision).getMonth() + 1).padStart(2, "0")}-${String(new Date(parsedDecision).getDate()).padStart(2, "0")}`;
-        return {
-          id: `LEAVE-${item.id}`,
-          employeeId: item.employeeId,
-          employeeName: item.employeeName,
-          title: `${item.type} leave`,
-          dateISO,
-          displayDate: item.range || item.decisionDate || formatScheduleDate(dateISO),
-          status: "Leave",
-          shift: "Approved leave",
-          notes: item.reviewNote ?? "Approved leave request",
-          createdBy: item.approverName ?? "HR",
-          updatedAt: item.decisionDate ?? item.requestedAt,
-          source: "Leave",
-        };
-      });
-    const mergedEntries = [...scheduleEntries, ...derivedLeaveEntries];
-    const visibleEntries = currentRole === "Employee" ? mergedEntries.filter((entry) => entry.employeeId === activeAccount.id) : mergedEntries;
-    const sortedEntries = [...visibleEntries].sort((a, b) => sortKey(a.dateISO) - sortKey(b.dateISO));
-    const todayEntries = sortedEntries.filter((entry) => entry.dateISO === todayISO);
-    const upcomingEntries = sortedEntries.filter((entry) => sortKey(entry.dateISO) > sortKey(todayISO)).slice(0, 6);
-    const currentSummary = todayEntries[0] ?? upcomingEntries[0] ?? sortedEntries[0] ?? null;
-    const canEditSchedule = currentRole === "Manager" || currentRole === "Admin";
-    const statusCounts = sortedEntries.reduce(
-      (acc, entry) => {
-        acc[entry.status] = (acc[entry.status] ?? 0) + 1;
-        return acc;
-      },
-      { Workday: 0, "Rest Day": 0, Leave: 0, Holiday: 0, Training: 0 } as Record<ScheduleStatus, number>,
-    );
-
     return (
-      <div className="space-y-6">
-        <section className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white shadow-sm ring-1 ring-slate-900/10">
-          <div className="p-6 sm:p-7">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-2xl">
-                <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Schedule / Calendar</div>
-                <h3 className="mt-2 text-3xl font-bold leading-tight sm:text-4xl">Employee schedule and shift planning</h3>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
-                  View current and upcoming entries, show approved leave automatically, and keep schedule editing lightweight for managers and admins.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <StatusPill>{visibleEntries.length} entries</StatusPill>
-                <StatusPill>{todayEntries.length} today</StatusPill>
-                <StatusPill>{currentRole}</StatusPill>
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {[
-                { label: "Today", value: currentSummary ? currentSummary.status : "No entry", note: currentSummary ? currentSummary.title : "Nothing scheduled" },
-                { label: "Upcoming", value: String(upcomingEntries.length), note: "Future entries" },
-                { label: "Workday", value: String(statusCounts.Workday), note: "Scheduled shifts" },
-                { label: "Leave", value: String(statusCounts.Leave), note: "Approved leave blocks" },
-              ].map((item) => (
-                <div key={item.label} className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-                  <div className="text-xs uppercase tracking-wide text-slate-400">{item.label}</div>
-                  <div className="mt-2 text-2xl font-bold text-white">{item.value}</div>
-                  <div className="mt-1 text-sm text-slate-300">{item.note}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
-          <SectionCard title={currentRole === "Employee" ? "My Schedule" : "Schedule List"} action={<StatusPill>{visibleEntries.length} visible</StatusPill>}>
-            <div className="space-y-4">
-              {currentSummary && (
-                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-xs uppercase tracking-wide text-slate-400">Today&apos;s schedule</div>
-                  <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <div className="text-lg font-bold text-slate-900">{currentSummary.title}</div>
-                      <div className="mt-1 text-sm text-slate-500">{currentSummary.employeeName} • {currentSummary.displayDate}</div>
-                      <div className="mt-2 text-sm leading-6 text-slate-600">{currentSummary.shift}</div>
-                      {currentSummary.notes && <div className="mt-1 text-sm leading-6 text-slate-500">{currentSummary.notes}</div>}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <StatusPill>{currentSummary.status}</StatusPill>
-                      <StatusPill>{currentSummary.source}</StatusPill>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-3">
-                <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">Upcoming entries</div>
-                {sortedEntries.length > 0 ? (
-                  sortedEntries.map((entry) => {
-                    const isToday = entry.dateISO === todayISO;
-                    return (
-                      <div key={entry.id} className={`rounded-3xl border p-4 shadow-sm ring-1 ${isToday ? "border-slate-950 bg-slate-50 ring-slate-950/10" : "border-slate-200 bg-white ring-slate-200"}`}>
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                          <div>
-                            <div className="text-base font-semibold text-slate-900">{entry.title}</div>
-                            <div className="mt-1 text-sm text-slate-500">{entry.employeeName} • {entry.displayDate}</div>
-                            <div className="mt-1 text-sm leading-6 text-slate-600">{entry.shift}</div>
-                            {entry.notes && <div className="mt-1 text-sm leading-6 text-slate-500">{entry.notes}</div>}
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            <StatusPill>{entry.status}</StatusPill>
-                            <StatusPill>{entry.source}</StatusPill>
-                            {canEditSchedule && entry.source === "Manual" && (
-                              <button onClick={() => beginScheduleEdit(entry)} className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">
-                                Edit
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
-                    {currentRole === "Employee"
-                      ? "No schedule entries are assigned to this account yet."
-                      : "No schedule entries are available yet. Create one on the right."}
-                  </div>
-                )}
-              </div>
-            </div>
-          </SectionCard>
-
-          {canEditSchedule ? (
-            <SectionCard title={editingScheduleId ? "Edit Schedule Entry" : "Create Schedule Entry"} action={<StatusPill>Manager / Admin</StatusPill>}>
-              <div className="space-y-3">
-                <select
-                  value={scheduleForm.employeeId}
-                  onChange={(e) => {
-                    const employee = activeEmployeeRecords.find((item) => item.id === e.target.value) ?? activeEmployeeRecords[0] ?? employeeRecords[0] ?? initialEmployeeRecords[0];
-                    setScheduleForm((prev) => ({ ...prev, employeeId: employee.id, employeeName: employee.name }));
-                  }}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
-                >
-                  {activeEmployeeRecords.map((item) => (
-                    <option key={item.id} value={item.id}>{item.name} • {item.id}</option>
-                  ))}
-                </select>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <input
-                    type="date"
-                    value={scheduleForm.dateISO}
-                    onChange={(e) => setScheduleForm((prev) => ({ ...prev, dateISO: e.target.value, displayDate: formatScheduleDate(e.target.value) }))}
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
-                  />
-                  <select
-                    value={scheduleForm.status}
-                    onChange={(e) => setScheduleForm((prev) => ({ ...prev, status: e.target.value as ScheduleStatus }))}
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
-                  >
-                    {(["Workday", "Rest Day", "Leave", "Holiday", "Training"] as ScheduleStatus[]).map((status) => (
-                      <option key={status}>{status}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <input
-                  value={scheduleForm.title}
-                  onChange={(e) => setScheduleForm((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="Schedule title"
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
-                />
-
-                <input
-                  value={scheduleForm.shift}
-                  onChange={(e) => setScheduleForm((prev) => ({ ...prev, shift: e.target.value }))}
-                  placeholder="Shift or time block"
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
-                />
-
-                <textarea
-                  value={scheduleForm.notes}
-                  onChange={(e) => setScheduleForm((prev) => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Notes"
-                  className="min-h-[120px] w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm"
-                />
-
-                <div className="flex flex-wrap gap-3">
-                  <button onClick={saveScheduleEntry} className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white">
-                    {editingScheduleId ? "Update Schedule" : "Add Schedule"}
-                  </button>
-                  <button onClick={resetScheduleBuilder} className="rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700">
-                    New Entry
-                  </button>
-                </div>
-
-                <div className="rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-                  Approved leave automatically appears in the employee schedule from the leave workflow. Manual entries are used for workdays, rest days, holidays, and training blocks.
-                </div>
-              </div>
-            </SectionCard>
-          ) : (
-            <SectionCard title="Schedule Summary" action={<StatusPill>View only</StatusPill>}>
-              <div className="space-y-3">
-                <div className="rounded-3xl bg-slate-50 p-4">
-                  <div className="text-sm font-semibold text-slate-900">Today&apos;s shift</div>
-                  <div className="mt-2 text-lg font-bold text-slate-900">{currentSummary ? currentSummary.title : "No schedule yet"}</div>
-                  <div className="mt-1 text-sm text-slate-500">{currentSummary ? `${currentSummary.displayDate} • ${currentSummary.shift}` : "Once assigned, the shift summary will appear here."}</div>
-                </div>
-                <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-200">
-                  <div className="text-xs uppercase tracking-wide text-slate-400">Status breakdown</div>
-                  <div className="mt-3 space-y-2">
-                    {(["Workday", "Rest Day", "Leave", "Holiday", "Training"] as ScheduleStatus[]).map((status) => (
-                      <div key={status} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 text-sm">
-                        <span className="font-medium text-slate-700">{status}</span>
-                        <StatusPill>{statusCounts[status]}</StatusPill>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </SectionCard>
-          )}
-        </div>
-      </div>
+      <ScheduleManagement
+        currentRole={currentRole}
+        activeAccount={activeAccount}
+        activeEmployeeRecords={activeEmployeeRecords}
+        scheduleEntries={scheduleEntries}
+        leaveRequests={leaveRequests}
+        scheduleForm={scheduleForm}
+        editingScheduleId={editingScheduleId}
+        todayISO={getLocalISODate()}
+        formatScheduleDate={formatScheduleDate}
+        setScheduleForm={setScheduleForm}
+        beginScheduleEdit={beginScheduleEdit}
+        resetScheduleBuilder={resetScheduleBuilder}
+        saveScheduleEntry={saveScheduleEntry}
+      />
     );
   };
-
   const renderNotifications = () => {
-    const unreadItems = notifications.filter((item) => item.unread);
-    const readItems = notifications.filter((item) => !item.unread);
-
     return (
-      <div className="space-y-6">
-        <section className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white shadow-sm ring-1 ring-slate-900/10">
-          <div className="p-6 sm:p-7">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-2xl">
-                <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Notifications / Inbox</div>
-                <h3 className="mt-2 text-3xl font-bold leading-tight sm:text-4xl">Your current inbox</h3>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
-                  Notifications are generated from current policies, training, leave, writeups, and schedule data. Open an item to jump to the related module when available.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <StatusPill>{unreadItems.length} unread</StatusPill>
-                <StatusPill>{notifications.length} total</StatusPill>
-                <StatusPill>{currentRole}</StatusPill>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          <SectionCard title="Unread" action={<StatusPill>{unreadItems.length} unread</StatusPill>}>
-            <div className="space-y-3">
-              {unreadItems.length > 0 ? (
-                unreadItems.map((item) => (
-                  <div key={item.id} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-200">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="text-base font-semibold text-slate-900">{item.title}</div>
-                        <div className="mt-1 text-sm leading-6 text-slate-500">{item.description}</div>
-                        <div className="mt-2 text-xs text-slate-400">{item.type} • {item.timestamp}</div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <StatusPill>Unread</StatusPill>
-                        <button
-                          onClick={() => {
-                            if (item.onOpen) item.onOpen();
-                            markNotificationAsRead(item.id);
-                          }}
-                          className="rounded-xl bg-slate-950 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
-                        >
-                          {item.actionLabel}
-                        </button>
-                        <button
-                          onClick={() => markNotificationAsRead(item.id)}
-                          className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700"
-                        >
-                          Mark as read
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
-                  No unread notifications right now.
-                </div>
-              )}
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Read" action={<StatusPill>{readItems.length} read</StatusPill>}>
-            <div className="space-y-3">
-              {readItems.length > 0 ? (
-                readItems.map((item) => (
-                  <div key={item.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm ring-1 ring-slate-200">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="text-base font-semibold text-slate-900">{item.title}</div>
-                        <div className="mt-1 text-sm leading-6 text-slate-500">{item.description}</div>
-                        <div className="mt-2 text-xs text-slate-400">{item.type} • {item.timestamp}</div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <StatusPill>Read</StatusPill>
-                        {item.canOpen && item.onOpen && (
-                          <button
-                            onClick={() => {
-                              item.onOpen?.();
-                              markNotificationAsRead(item.id);
-                            }}
-                            className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700"
-                          >
-                            Open
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
-                  Read notifications will appear here after you open or mark items as read.
-                </div>
-              )}
-            </div>
-          </SectionCard>
-        </div>
-      </div>
+      <NotificationsManagement
+        notifications={notifications}
+        currentRole={currentRole}
+        markNotificationAsRead={markNotificationAsRead}
+      />
     );
   };
-
   const renderAnnouncements = () => (
     <SectionCard title="Announcements">
       <div className="space-y-4">
@@ -3931,663 +2944,185 @@ export default function EmployeePortalPrototype() {
     </SectionCard>
   );
 
-  const renderMasterlist = () => {
-    const totalEmployees = employeeRecords.length;
-    const activeCount = activeEmployeeRecords.length;
-    const inactiveCount = totalEmployees - activeCount;
-
-    return (
-      <div className="space-y-6">
-        <section className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white shadow-sm ring-1 ring-slate-900/10">
-          <div className="p-6 sm:p-7">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-2xl">
-                <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Employee Masterlist</div>
-                <h3 className="mt-2 text-3xl font-bold leading-tight sm:text-4xl">Employee management and directory</h3>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
-                  Manage employee records without changing the current test-account login flow. Add or update employees here, and the directory will stay available across the app.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <StatusPill>{totalEmployees} total</StatusPill>
-                <StatusPill>{activeCount} active</StatusPill>
-                <StatusPill>{inactiveCount} inactive</StatusPill>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <SectionCard title="Employee Directory" action={<StatusPill>{totalEmployees} record(s)</StatusPill>}>
-            <div className="space-y-3">
-              {employeeRecords.length > 0 ? (
-                employeeRecords.map((item) => (
-                  <div key={item.id} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-200">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                      <div>
-                        <div className="text-base font-semibold text-slate-900">{item.name}</div>
-                        <div className="mt-1 text-sm text-slate-500">{item.id} • {item.department}</div>
-                        <div className="mt-1 text-sm text-slate-500">{item.position}</div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <StatusPill>{item.role}</StatusPill>
-                        <StatusPill>{item.employmentType}</StatusPill>
-                        <StatusPill>{item.isActive ? "Active" : "Inactive"}</StatusPill>
-                        {currentRole === "Admin" && (
-                          <>
-                            <button onClick={() => beginEmployeeEdit(item)} className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">Edit</button>
-                            <button onClick={() => toggleEmployeeActive(item.id)} className="rounded-xl bg-slate-950 px-3 py-2 text-xs font-semibold text-white">
-                              {item.isActive ? "Set Inactive" : "Set Active"}
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="mt-3 grid gap-2 sm:grid-cols-2 text-sm text-slate-500">
-                      <div className="rounded-2xl bg-slate-50 px-4 py-3">Email: {item.email}</div>
-                      <div className="rounded-2xl bg-slate-50 px-4 py-3">Mobile: {item.mobile}</div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-500">No employee records are available yet.</div>
-              )}
-            </div>
-          </SectionCard>
-
-          {currentRole === "Admin" ? (
-            <SectionCard title={editingEmployeeId ? "Edit Employee" : "Add Employee"} action={<StatusPill>Admin only</StatusPill>}>
-              <div className="space-y-3">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <input value={employeeForm.name} onChange={(e) => setEmployeeForm((prev) => ({ ...prev, name: e.target.value }))} placeholder="Full name" className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm" />
-                  <input value={employeeForm.id} onChange={(e) => setEmployeeForm((prev) => ({ ...prev, id: e.target.value }))} placeholder="Employee ID" className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm" />
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <select value={employeeForm.role} onChange={(e) => setEmployeeForm((prev) => ({ ...prev, role: e.target.value as Role }))} className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm">
-                    {availableRoles.map((role) => <option key={role}>{role}</option>)}
-                  </select>
-                  <input value={employeeForm.department} onChange={(e) => setEmployeeForm((prev) => ({ ...prev, department: e.target.value }))} placeholder="Department" className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm" />
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <input value={employeeForm.position} onChange={(e) => setEmployeeForm((prev) => ({ ...prev, position: e.target.value }))} placeholder="Position" className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm" />
-                  <input value={employeeForm.employmentType} onChange={(e) => setEmployeeForm((prev) => ({ ...prev, employmentType: e.target.value }))} placeholder="Employment type" className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm" />
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <input value={employeeForm.email} onChange={(e) => setEmployeeForm((prev) => ({ ...prev, email: e.target.value }))} placeholder="Email" className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm" />
-                  <input value={employeeForm.mobile} onChange={(e) => setEmployeeForm((prev) => ({ ...prev, mobile: e.target.value }))} placeholder="Mobile" className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm" />
-                </div>
-
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <div className="text-sm font-semibold text-slate-900">Status</div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <button onClick={() => setEmployeeForm((prev) => ({ ...prev, isActive: true }))} className={`rounded-full px-3 py-2 text-xs font-semibold ${employeeForm.isActive ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-700"}`}>Active</button>
-                    <button onClick={() => setEmployeeForm((prev) => ({ ...prev, isActive: false }))} className={`rounded-full px-3 py-2 text-xs font-semibold ${!employeeForm.isActive ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-700"}`}>Inactive</button>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <button onClick={saveEmployeeRecord} className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white">Save Employee</button>
-                  <button onClick={resetEmployeeForm} className="rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700">New Employee</button>
-                </div>
-
-                <div className="rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-                  Updated employee records appear in the directory and in app selectors that rely on the employee list. Test-account persona shortcuts remain unchanged.
-                </div>
-              </div>
-            </SectionCard>
-          ) : (
-            <SectionCard title="Employee Management" action={<StatusPill>View only</StatusPill>}>
-              <div className="rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-                This view stays read-only outside Admin. The directory is shared across the app, while the quick test-account login flow stays intact.
-              </div>
-            </SectionCard>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const renderAdmin = () => (
-    <SectionCard title="Admin Controls">
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        <button onClick={() => setActivePage("Employee Masterlist")} className="rounded-2xl border border-slate-200 p-4 text-left font-semibold transition hover:border-slate-300 hover:bg-slate-50">
-          <div>Employee Management</div>
-          <div className="mt-1 text-sm font-normal text-slate-500">Open the masterlist to add or update employees.</div>
-        </button>
-        {adminItems.map((item) => <div key={item} className="rounded-2xl border border-slate-200 p-4 font-semibold">{item}</div>)}
-      </div>
-    </SectionCard>
+  const renderMasterlist = () => (
+    <EmployeeMasterlist
+      currentRole={currentRole}
+      employeeRecords={employeeRecords}
+      activeEmployeeRecords={activeEmployeeRecords}
+      availableRoles={availableRoles}
+      editingEmployeeId={editingEmployeeId}
+      employeeForm={employeeForm}
+      setEmployeeForm={setEmployeeForm}
+      beginEmployeeEdit={beginEmployeeEdit}
+      toggleEmployeeActive={toggleEmployeeActive}
+      saveEmployeeRecord={saveEmployeeRecord}
+      resetEmployeeForm={resetEmployeeForm}
+    />
   );
-
+  const renderAdmin = () => (
+    <AdminDashboard setActivePage={setActivePage} adminItems={adminItems} />
+  );
   const buildReportSnapshot = () => {
-    const employeeLookup = new Map(employeeRecords.map((employee) => [employee.id, employee] as const));
-    const filteredEmployees = employeeRecords.filter((employee) => {
-      const employeeMatch = reportFilters.employeeId === "All" || employee.id === reportFilters.employeeId;
-      const roleMatch = reportFilters.role === "All" || employee.role === reportFilters.role;
-      const departmentMatch = reportFilters.department === "All" || employee.department === reportFilters.department;
-      const statusMatch =
-        reportFilters.status === "All"
-          ? true
-          : reportFilters.status === "Active"
-            ? employee.isActive
-            : reportFilters.status === "Inactive"
-              ? !employee.isActive
-              : true;
-      return employeeMatch && roleMatch && departmentMatch && statusMatch;
-    });
+  const employeeLookup = new Map(employeeRecords.map((employee) => [employee.id, employee] as const));
+  const filteredEmployees = employeeRecords.filter((employee) => {
+    const employeeMatch = reportFilters.employeeId === 'All' || employee.id === reportFilters.employeeId;
+    const roleMatch = reportFilters.role === 'All' || employee.role === reportFilters.role;
+    const departmentMatch = reportFilters.department === 'All' || employee.department === reportFilters.department;
+    const statusMatch =
+      reportFilters.status === 'All'
+        ? true
+        : reportFilters.status === 'Active'
+          ? employee.isActive
+          : reportFilters.status === 'Inactive'
+            ? !employee.isActive
+            : true;
+    return employeeMatch && roleMatch && departmentMatch && statusMatch;
+  });
 
-    const filteredEmployeeIds = new Set(filteredEmployees.map((employee) => employee.id));
-    const rowStatusFilter = reportFilters.status === "Active" || reportFilters.status === "Inactive" ? "All" : reportFilters.status;
-    const matchesEmployeeScope = (employeeId: string) => {
-      const employee = employeeLookup.get(employeeId);
-      return Boolean(employee && filteredEmployeeIds.has(employee.id));
-    };
-    const matchesRowStatus = (candidate: string, alternate?: string) => rowStatusFilter === "All" || candidate === rowStatusFilter || alternate === rowStatusFilter;
-
-    const filteredLeaveRequests = leaveRequests.filter((item) => matchesEmployeeScope(item.employeeId) && matchesRowStatus(item.status));
-    const filteredWriteups = writeupRecords.filter((item) => matchesEmployeeScope(item.employeeId) && matchesRowStatus(item.status));
-
-    const filteredTrainingModules = trainingCatalog.flatMap((module) => {
-      const assignedEmployees = filteredEmployees.filter((employee) => module.assignedRoles.includes(employee.role));
-      if (assignedEmployees.length === 0) return [];
-
-      const progressRecords = trainingProgress.filter((item) => item.moduleId === module.id && assignedEmployees.some((employee) => employee.id === item.employeeId));
-      const completedCount = progressRecords.filter((item) => item.status === "Completed").length;
-      const failedCount = progressRecords.filter((item) => item.status === "Failed").length;
-      const inProgressCount = progressRecords.filter((item) => item.status === "In Progress").length;
-      const assignedCount = Math.max(assignedEmployees.length - progressRecords.length, 0);
-      const moduleStatus = progressRecords.length === 0 ? (module.status === "Draft" ? "Draft" : "Assigned") : failedCount > 0 ? "Failed" : inProgressCount > 0 ? "In Progress" : completedCount >= assignedEmployees.length ? "Completed" : "Assigned";
-
-      if (!matchesRowStatus(moduleStatus, module.status)) return [];
-
-      return [{
-        module,
-        assignedEmployees,
-        progressRecords,
-        completedCount,
-        failedCount,
-        inProgressCount,
-        assignedCount,
-        moduleStatus,
-      }];
-    });
-
-    const filteredPolicies = policyCatalog.flatMap((policy) => {
-      const assignedEmployees = filteredEmployees.filter((employee) => policy.assignedRoles.includes(employee.role));
-      if (assignedEmployees.length === 0) return [];
-
-      const signatures = policySignatures.filter((item) => item.policyId === policy.id && assignedEmployees.some((employee) => employee.id === item.employeeId));
-      const policyStatus = signatures.length > 0 ? "Signed" : "Pending";
-
-      if (!matchesRowStatus(policyStatus, policy.status)) return [];
-
-      return [{
-        policy,
-        assignedEmployees,
-        signatures,
-        policyStatus,
-      }];
-    });
-
-    return {
-      generatedAt: formatLocalDate(new Date()),
-      filters: reportFilters,
-      employees: {
-        total: filteredEmployees.length,
-        active: filteredEmployees.filter((employee) => employee.isActive).length,
-        inactive: filteredEmployees.filter((employee) => !employee.isActive).length,
-        list: filteredEmployees,
-      },
-      leaveRequests: {
-        total: filteredLeaveRequests.length,
-        submitted: filteredLeaveRequests.filter((item) => item.status === "Submitted").length,
-        managerApproved: filteredLeaveRequests.filter((item) => item.status === "Manager Approved").length,
-        hrApproved: filteredLeaveRequests.filter((item) => item.status === "HR Approved").length,
-        cancelled: filteredLeaveRequests.filter((item) => item.status === "Cancelled").length,
-        list: filteredLeaveRequests,
-      },
-      training: {
-        total: filteredTrainingModules.length,
-        assigned: filteredTrainingModules.filter((item) => item.moduleStatus === "Assigned").length,
-        inProgress: filteredTrainingModules.filter((item) => item.moduleStatus === "In Progress").length,
-        completed: filteredTrainingModules.filter((item) => item.moduleStatus === "Completed").length,
-        failed: filteredTrainingModules.filter((item) => item.moduleStatus === "Failed").length,
-        list: filteredTrainingModules,
-      },
-      policies: {
-        total: filteredPolicies.length,
-        pending: filteredPolicies.filter((item) => item.policyStatus === "Pending").length,
-        signed: filteredPolicies.filter((item) => item.policyStatus === "Signed").length,
-        list: filteredPolicies,
-      },
-      writeups: {
-        total: filteredWriteups.length,
-        pendingReview: filteredWriteups.filter((item) => item.status === "Pending Review").length,
-        pendingAcknowledgment: filteredWriteups.filter((item) => item.status === "Pending Acknowledgment").length,
-        pendingSignature: filteredWriteups.filter((item) => item.status === "Pending Signature").length,
-        closed: filteredWriteups.filter((item) => item.status === "Closed").length,
-        list: filteredWriteups,
-      },
-    };
+  const filteredEmployeeIds = new Set(filteredEmployees.map((employee) => employee.id));
+  const rowStatusFilter = reportFilters.status === 'Active' || reportFilters.status === 'Inactive' ? 'All' : reportFilters.status;
+  const matchesEmployeeScope = (employeeId: string) => {
+    const employee = employeeLookup.get(employeeId);
+    return Boolean(employee && filteredEmployeeIds.has(employee.id));
   };
+  const matchesRowStatus = (candidate: string, alternate?: string) => rowStatusFilter === 'All' || candidate === rowStatusFilter || alternate === rowStatusFilter;
+
+  const filteredLeaveRequests = leaveRequests.filter((item) => matchesEmployeeScope(item.employeeId) && matchesRowStatus(item.status));
+  const filteredWriteups = writeupRecords.filter((item) => matchesEmployeeScope(item.employeeId) && matchesRowStatus(item.status));
+  const latestPayslip = payslips[0] ?? null;
+  const latestPayslipDetail = latestPayslip ? payslipDetailMap[latestPayslip.period] ?? null : null;
+  const attendanceSummary = {
+    total: attendanceRows.length,
+    present: attendanceRows.filter((row) => row.status === 'Present').length,
+    late: attendanceRows.filter((row) => row.status === 'Late').length,
+    device: attendanceRows.filter((row) => row.source === 'Device').length,
+    manual: attendanceRows.filter((row) => row.source !== 'Device').length,
+    rows: attendanceRows,
+  };
+  const payrollRows = filteredEmployees.map((employee) => ({
+    employeeId: employee.id,
+    employeeName: employee.name,
+    role: employee.role,
+    department: employee.department,
+    employmentType: employee.employmentType,
+    status: employee.isActive ? 'Active' : 'Inactive',
+    period: latestPayslip?.period ?? 'No payslip available',
+    payslipStatus: latestPayslip?.status ?? 'N/A',
+    gross: latestPayslipDetail?.gross ?? 'N/A',
+    deductions: latestPayslipDetail?.deductions ?? 'N/A',
+    net: latestPayslipDetail?.net ?? 'N/A',
+  }));
+
+  const filteredTrainingModules = trainingCatalog.flatMap((module) => {
+    const assignedEmployees = filteredEmployees.filter((employee) => module.assignedRoles.includes(employee.role));
+    if (assignedEmployees.length === 0) return [];
+
+    const progressRecords = trainingProgress.filter((item) => item.moduleId === module.id && assignedEmployees.some((employee) => employee.id === item.employeeId));
+    const completedCount = progressRecords.filter((item) => item.status === 'Completed').length;
+    const failedCount = progressRecords.filter((item) => item.status === 'Failed').length;
+    const inProgressCount = progressRecords.filter((item) => item.status === 'In Progress').length;
+    const assignedCount = Math.max(assignedEmployees.length - progressRecords.length, 0);
+    const moduleStatus = progressRecords.length === 0 ? (module.status === 'Draft' ? 'Draft' : 'Assigned') : failedCount > 0 ? 'Failed' : inProgressCount > 0 ? 'In Progress' : completedCount >= assignedEmployees.length ? 'Completed' : 'Assigned';
+
+    if (!matchesRowStatus(moduleStatus, module.status)) return [];
+
+    return [{
+      module,
+      assignedEmployees,
+      progressRecords,
+      completedCount,
+      failedCount,
+      inProgressCount,
+      assignedCount,
+      moduleStatus,
+    }];
+  });
+
+  const filteredPolicies = policyCatalog.flatMap((policy) => {
+    const assignedEmployees = filteredEmployees.filter((employee) => policy.assignedRoles.includes(employee.role));
+    if (assignedEmployees.length === 0) return [];
+
+    const signatures = policySignatures.filter((item) => item.policyId === policy.id && assignedEmployees.some((employee) => employee.id === item.employeeId));
+    const policyStatus = signatures.length > 0 ? 'Signed' : 'Pending';
+
+    if (!matchesRowStatus(policyStatus, policy.status)) return [];
+
+    return [{
+      policy,
+      assignedEmployees,
+      signatures,
+      policyStatus,
+    }];
+  });
+
+  return {
+    generatedAt: formatLocalDate(new Date()),
+    filters: reportFilters,
+    employees: {
+      total: filteredEmployees.length,
+      active: filteredEmployees.filter((employee) => employee.isActive).length,
+      inactive: filteredEmployees.filter((employee) => !employee.isActive).length,
+      list: filteredEmployees,
+    },
+    leaveRequests: {
+      total: filteredLeaveRequests.length,
+      submitted: filteredLeaveRequests.filter((item) => item.status === 'Submitted').length,
+      managerApproved: filteredLeaveRequests.filter((item) => item.status === 'Manager Approved').length,
+      hrApproved: filteredLeaveRequests.filter((item) => item.status === 'HR Approved').length,
+      cancelled: filteredLeaveRequests.filter((item) => item.status === 'Cancelled').length,
+      list: filteredLeaveRequests,
+    },
+    training: {
+      total: filteredTrainingModules.length,
+      assigned: filteredTrainingModules.filter((item) => item.moduleStatus === 'Assigned').length,
+      inProgress: filteredTrainingModules.filter((item) => item.moduleStatus === 'In Progress').length,
+      completed: filteredTrainingModules.filter((item) => item.moduleStatus === 'Completed').length,
+      failed: filteredTrainingModules.filter((item) => item.moduleStatus === 'Failed').length,
+      list: filteredTrainingModules,
+    },
+    payroll: {
+      totalEmployees: payrollRows.length,
+      releasedPeriods: payslips.filter((item) => item.status === 'Released').length,
+      latestPayslip,
+      latestPayslipDetail,
+      rows: payrollRows,
+    },
+    attendance: attendanceSummary,
+    policies: {
+      total: filteredPolicies.length,
+      pending: filteredPolicies.filter((item) => item.policyStatus === 'Pending').length,
+      signed: filteredPolicies.filter((item) => item.policyStatus === 'Signed').length,
+      list: filteredPolicies,
+    },
+    writeups: {
+      total: filteredWriteups.length,
+      pendingReview: filteredWriteups.filter((item) => item.status === 'Pending Review').length,
+      pendingAcknowledgment: filteredWriteups.filter((item) => item.status === 'Pending Acknowledgment').length,
+      pendingSignature: filteredWriteups.filter((item) => item.status === 'Pending Signature').length,
+      closed: filteredWriteups.filter((item) => item.status === 'Closed').length,
+      list: filteredWriteups,
+    },
+  };
+}
+
 
   const handlePrintSummary = () => {
     window.print();
   };
 
-  const handleExportData = () => {
-    const snapshot = buildReportSnapshot();
-    const payload = {
-      ...snapshot,
-      exportedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `employee-portal-reports-${getLocalISODate()}.json`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-  };
-
   const renderReports = () => {
-    const snapshot = buildReportSnapshot();
-    const reportStatusOptions = [
-      "All",
-      "Active",
-      "Inactive",
-      "Draft",
-      "Published",
-      "Pending",
-      "Signed",
-      "Assigned",
-      "In Progress",
-      "Completed",
-      "Failed",
-      "Submitted",
-      "Manager Approved",
-      "Manager Rejected",
-      "HR Approved",
-      "HR Rejected",
-      "Cancelled",
-      "Pending Review",
-      "Pending Acknowledgment",
-      "Pending Signature",
-      "Acknowledged",
-      "Closed",
-    ];
-    const departmentOptions = ["All", ...Array.from(new Set(employeeRecords.map((employee) => employee.department))).sort((a, b) => a.localeCompare(b))];
-    const selectedEmployeeLabel =
-      reportFilters.employeeId === "All"
-        ? "All employees"
-        : employeeRecords.find((employee) => employee.id === reportFilters.employeeId)?.name ?? reportFilters.employeeId;
-
     return (
-      <div className="space-y-6">
-        <section className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white shadow-sm ring-1 ring-slate-900/10">
-          <div className="p-6 sm:p-7">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-2xl">
-                <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Reports & Export Center</div>
-                <h3 className="mt-2 text-3xl font-bold leading-tight sm:text-4xl">Live operational summary for HR and Admin</h3>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
-                  These reports are built from current in-app state, including employees, leave, training, policies, writeups, and schedule-linked records. Use the filters to narrow the data, print a summary, or export a JSON snapshot.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <StatusPill>{snapshot.employees.total} employees</StatusPill>
-                <StatusPill>{snapshot.leaveRequests.total} leave items</StatusPill>
-                <StatusPill>{snapshot.training.completed} training complete</StatusPill>
-                <StatusPill>{snapshot.policies.signed} policy signed</StatusPill>
-              </div>
-            </div>
-            <div className="mt-5 flex flex-wrap gap-3 print:hidden">
-              <button onClick={handlePrintSummary} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950">
-                Print Summary
-              </button>
-              <button onClick={handleExportData} className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white">
-                Export Data
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <SectionCard title="Report Filters" action={<StatusPill>Live filters</StatusPill>}>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <label className="space-y-2 text-sm font-semibold text-slate-700">
-              <span>Employee</span>
-              <select value={reportFilters.employeeId} onChange={(event) => setReportFilters((prev) => ({ ...prev, employeeId: event.target.value }))} className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm font-normal">
-                <option value="All">All</option>
-                {employeeRecords.map((employee) => (
-                  <option key={employee.id} value={employee.id}>
-                    {employee.id} — {employee.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="space-y-2 text-sm font-semibold text-slate-700">
-              <span>Role</span>
-              <select value={reportFilters.role} onChange={(event) => setReportFilters((prev) => ({ ...prev, role: event.target.value as Role | "All" }))} className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm font-normal">
-                <option>All</option>
-                {availableRoles.map((role) => (
-                  <option key={role}>{role}</option>
-                ))}
-              </select>
-            </label>
-            <label className="space-y-2 text-sm font-semibold text-slate-700">
-              <span>Department</span>
-              <select value={reportFilters.department} onChange={(event) => setReportFilters((prev) => ({ ...prev, department: event.target.value }))} className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm font-normal">
-                {departmentOptions.map((option) => (
-                  <option key={option}>{option}</option>
-                ))}
-              </select>
-            </label>
-            <label className="space-y-2 text-sm font-semibold text-slate-700">
-              <span>Status</span>
-              <select value={reportFilters.status} onChange={(event) => setReportFilters((prev) => ({ ...prev, status: event.target.value }))} className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm font-normal">
-                {reportStatusOptions.map((option) => (
-                  <option key={option}>{option}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <StatusPill>{selectedEmployeeLabel}</StatusPill>
-            <StatusPill>{reportFilters.role}</StatusPill>
-            <StatusPill>{reportFilters.department}</StatusPill>
-            <StatusPill>{reportFilters.status}</StatusPill>
-            <button onClick={() => setReportFilters({ employeeId: "All", role: "All", department: "All", status: "All" })} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
-              Reset Filters
-            </button>
-          </div>
-        </SectionCard>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <div className="text-sm text-slate-500">Employees</div>
-            <div className="mt-2 text-3xl font-bold">{snapshot.employees.total}</div>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
-              <StatusPill>{snapshot.employees.active} active</StatusPill>
-              <StatusPill>{snapshot.employees.inactive} inactive</StatusPill>
-            </div>
-          </div>
-          <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <div className="text-sm text-slate-500">Leave</div>
-            <div className="mt-2 text-3xl font-bold">{snapshot.leaveRequests.total}</div>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
-              <StatusPill>{snapshot.leaveRequests.submitted} submitted</StatusPill>
-              <StatusPill>{snapshot.leaveRequests.hrApproved} final approved</StatusPill>
-            </div>
-          </div>
-          <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <div className="text-sm text-slate-500">Training</div>
-            <div className="mt-2 text-3xl font-bold">{snapshot.training.total}</div>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
-              <StatusPill>{snapshot.training.completed} completed</StatusPill>
-              <StatusPill>{snapshot.training.inProgress} in progress</StatusPill>
-            </div>
-          </div>
-          <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <div className="text-sm text-slate-500">Policies</div>
-            <div className="mt-2 text-3xl font-bold">{snapshot.policies.total}</div>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
-              <StatusPill>{snapshot.policies.signed} signed</StatusPill>
-              <StatusPill>{snapshot.policies.pending} pending</StatusPill>
-            </div>
-          </div>
-          <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <div className="text-sm text-slate-500">Writeups</div>
-            <div className="mt-2 text-3xl font-bold">{snapshot.writeups.total}</div>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
-              <StatusPill>{snapshot.writeups.pendingReview} review</StatusPill>
-              <StatusPill>{snapshot.writeups.pendingSignature} signature</StatusPill>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-6 xl:grid-cols-2">
-          <SectionCard title="Employee Status" action={<StatusPill>{snapshot.employees.total} visible</StatusPill>}>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <div className="text-sm text-slate-500">Active</div>
-                <div className="mt-2 text-2xl font-bold">{snapshot.employees.active}</div>
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <div className="text-sm text-slate-500">Inactive</div>
-                <div className="mt-2 text-2xl font-bold">{snapshot.employees.inactive}</div>
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <div className="text-sm text-slate-500">Filtered total</div>
-                <div className="mt-2 text-2xl font-bold">{snapshot.employees.total}</div>
-              </div>
-            </div>
-            <div className="mt-4 space-y-3">
-              {snapshot.employees.list.length > 0 ? (
-                snapshot.employees.list.map((employee) => (
-                  <div key={employee.id} className="rounded-2xl border border-slate-200 p-4">
-                    <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                      <div>
-                        <div className="font-semibold text-slate-900">{employee.name}</div>
-                        <div className="text-sm text-slate-500">{employee.id} • {employee.department} • {employee.position}</div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <StatusPill>{employee.role}</StatusPill>
-                        <StatusPill>{employee.employmentType}</StatusPill>
-                        <StatusPill>{employee.isActive ? "Active" : "Inactive"}</StatusPill>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">No employee records match the current filters.</div>
-              )}
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Leave Requests" action={<StatusPill>{snapshot.leaveRequests.total} visible</StatusPill>}>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <div className="text-sm text-slate-500">Submitted</div>
-                <div className="mt-2 text-2xl font-bold">{snapshot.leaveRequests.submitted}</div>
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <div className="text-sm text-slate-500">Manager Approved</div>
-                <div className="mt-2 text-2xl font-bold">{snapshot.leaveRequests.managerApproved}</div>
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <div className="text-sm text-slate-500">HR Approved</div>
-                <div className="mt-2 text-2xl font-bold">{snapshot.leaveRequests.hrApproved}</div>
-              </div>
-            </div>
-            <div className="mt-4 space-y-3">
-              {snapshot.leaveRequests.list.length > 0 ? (
-                snapshot.leaveRequests.list.map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-slate-200 p-4">
-                    <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                      <div>
-                        <div className="font-semibold text-slate-900">{item.employeeName}</div>
-                        <div className="text-sm text-slate-500">{item.type} • {item.range}</div>
-                        <div className="mt-1 text-sm text-slate-500">{item.reason}</div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <StatusPill>{item.status}</StatusPill>
-                        <StatusPill>{item.requestedAt}</StatusPill>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">No leave requests match the current filters.</div>
-              )}
-            </div>
-          </SectionCard>
-        </div>
-
-        <div className="grid gap-6 xl:grid-cols-2">
-          <SectionCard title="Training Completion" action={<StatusPill>{snapshot.training.total} visible</StatusPill>}>
-            <div className="grid gap-3 sm:grid-cols-4">
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <div className="text-sm text-slate-500">Assigned</div>
-                <div className="mt-2 text-2xl font-bold">{snapshot.training.assigned}</div>
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <div className="text-sm text-slate-500">In Progress</div>
-                <div className="mt-2 text-2xl font-bold">{snapshot.training.inProgress}</div>
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <div className="text-sm text-slate-500">Completed</div>
-                <div className="mt-2 text-2xl font-bold">{snapshot.training.completed}</div>
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <div className="text-sm text-slate-500">Failed</div>
-                <div className="mt-2 text-2xl font-bold">{snapshot.training.failed}</div>
-              </div>
-            </div>
-            <div className="mt-4 space-y-3">
-              {snapshot.training.list.length > 0 ? (
-                snapshot.training.list.map((item) => (
-                  <div key={item.module.id} className="rounded-2xl border border-slate-200 p-4">
-                    <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                      <div>
-                        <div className="font-semibold text-slate-900">{item.module.title}</div>
-                        <div className="text-sm text-slate-500">{item.module.category} • {item.assignedEmployees.length} assigned</div>
-                        <div className="mt-1 text-sm text-slate-500">
-                          {item.completedCount} completed, {item.inProgressCount} in progress, {item.failedCount} failed
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <StatusPill>{item.moduleStatus}</StatusPill>
-                        <StatusPill>{item.module.status}</StatusPill>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">No training records match the current filters.</div>
-              )}
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Policy Signatures" action={<StatusPill>{snapshot.policies.total} visible</StatusPill>}>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <div className="text-sm text-slate-500">Signed</div>
-                <div className="mt-2 text-2xl font-bold">{snapshot.policies.signed}</div>
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <div className="text-sm text-slate-500">Pending</div>
-                <div className="mt-2 text-2xl font-bold">{snapshot.policies.pending}</div>
-              </div>
-              <div className="rounded-2xl bg-slate-50 p-4">
-                <div className="text-sm text-slate-500">Filtered total</div>
-                <div className="mt-2 text-2xl font-bold">{snapshot.policies.total}</div>
-              </div>
-            </div>
-            <div className="mt-4 space-y-3">
-              {snapshot.policies.list.length > 0 ? (
-                snapshot.policies.list.map((item) => (
-                  <div key={item.policy.id} className="rounded-2xl border border-slate-200 p-4">
-                    <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                      <div>
-                        <div className="font-semibold text-slate-900">{item.policy.title}</div>
-                        <div className="text-sm text-slate-500">{item.policy.category} • {item.assignedEmployees.length} assigned</div>
-                        <div className="mt-1 text-sm text-slate-500">
-                          {item.signatures.length > 0
-                            ? `${item.signatures.length} signed by ${item.signatures.map((signature) => signature.employeeName).join(", ")}`
-                            : "No signature recorded yet"}
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <StatusPill>{item.policyStatus}</StatusPill>
-                        <StatusPill>{item.policy.status}</StatusPill>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">No policy records match the current filters.</div>
-              )}
-            </div>
-          </SectionCard>
-        </div>
-
-        <SectionCard title="Writeups" action={<StatusPill>{snapshot.writeups.total} visible</StatusPill>}>
-          <div className="grid gap-3 sm:grid-cols-4">
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <div className="text-sm text-slate-500">Pending Review</div>
-              <div className="mt-2 text-2xl font-bold">{snapshot.writeups.pendingReview}</div>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <div className="text-sm text-slate-500">Pending Acknowledgment</div>
-              <div className="mt-2 text-2xl font-bold">{snapshot.writeups.pendingAcknowledgment}</div>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <div className="text-sm text-slate-500">Pending Signature</div>
-              <div className="mt-2 text-2xl font-bold">{snapshot.writeups.pendingSignature}</div>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <div className="text-sm text-slate-500">Closed</div>
-              <div className="mt-2 text-2xl font-bold">{snapshot.writeups.closed}</div>
-            </div>
-          </div>
-          <div className="mt-4 space-y-3">
-            {snapshot.writeups.list.length > 0 ? (
-              snapshot.writeups.list.map((item) => (
-                <div key={item.id} className="rounded-2xl border border-slate-200 p-4">
-                  <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <div className="font-semibold text-slate-900">{item.employee}</div>
-                      <div className="text-sm text-slate-500">{item.category} • {item.title}</div>
-                      <div className="mt-1 text-sm text-slate-500">
-                        {item.acknowledgmentRequired ? "Acknowledgment required" : "Acknowledgment optional"} • {item.signatureRequired ? "Signature required" : "Signature optional"}
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <StatusPill>{item.status}</StatusPill>
-                      <StatusPill>{item.severity}</StatusPill>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">No writeups match the current filters.</div>
-            )}
-          </div>
-        </SectionCard>
-
-        <SectionCard title="Export Preview" action={<StatusPill>JSON snapshot</StatusPill>}>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <div className="text-sm text-slate-500">Generated</div>
-              <div className="mt-2 font-semibold text-slate-900">{snapshot.generatedAt}</div>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <div className="text-sm text-slate-500">Employees</div>
-              <div className="mt-2 font-semibold text-slate-900">{snapshot.employees.total}</div>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <div className="text-sm text-slate-500">Leave / Training</div>
-              <div className="mt-2 font-semibold text-slate-900">{snapshot.leaveRequests.total} / {snapshot.training.total}</div>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <div className="text-sm text-slate-500">Policies / Writeups</div>
-              <div className="mt-2 font-semibold text-slate-900">{snapshot.policies.total} / {snapshot.writeups.total}</div>
-            </div>
-          </div>
-          <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-            Export downloads a filtered JSON snapshot, while Print Summary opens the browser print dialog for the same live data.
-          </div>
-        </SectionCard>
-      </div>
+      <ReportsManagement
+        snapshot={buildReportSnapshot()}
+        reportFilters={reportFilters}
+        setReportFilters={setReportFilters}
+        employeeRecords={employeeRecords}
+        availableRoles={availableRoles}
+        exportDateISO={getLocalISODate()}
+        handlePrintSummary={handlePrintSummary}
+      />
     );
   };
-
   const renderPlaceholder = (title: string) => (
     <SectionCard title={title}><div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-500">No built-in page matches "{title}". Showing a safe fallback instead of an empty view.</div></SectionCard>
   );
@@ -4621,18 +3156,18 @@ export default function EmployeePortalPrototype() {
   if (!isLoggedIn) return renderLogin();
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
+    <div className="min-h-[100dvh] bg-slate-100 text-slate-900 [overscroll-behavior-y:contain]">
       <div className="flex min-h-screen">
         <aside className="hidden w-72 shrink-0 border-r border-slate-200 bg-slate-950 text-white lg:flex lg:flex-col">
           <div className="border-b border-slate-800 px-6 py-5">
-            <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Standalone MVP</div>
+            <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Employee Portal</div>
             <h1 className="mt-2 text-2xl font-bold">Employee Portal</h1>
-            <p className="mt-2 text-sm text-slate-400">Role-based employee portal with MVP workflows.</p>
+            <p className="mt-2 text-sm text-slate-400">Role-based employee portal with stable V1 workflows.</p>
           </div>
 
           <div className="px-4 pt-4">
             <div className="rounded-2xl bg-slate-900 p-4">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Demo Role</div>
+              <div className="text-xs uppercase tracking-wide text-slate-400">Role Switch</div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {(Object.keys(roleMenus) as Role[]).map((role) => (
                   <button
@@ -4668,26 +3203,29 @@ export default function EmployeePortalPrototype() {
 
           <div className="border-t border-slate-800 p-4">
             <div className="rounded-2xl bg-slate-900 p-4">
-              <div className="text-sm font-semibold">MVP Notes</div>
-              <p className="mt-2 text-sm text-slate-400">Leave, policy signing, training quiz, payslip viewing, and writeup tracking are interactive in this build.</p>
+              <div className="text-sm font-semibold">Release Notes</div>
+              <p className="mt-2 text-sm text-slate-400">Leave, policy signing, training quiz, payslip viewing, and writeup tracking are available in this internal release.</p>
+              <div className="mt-3 text-xs uppercase tracking-[0.2em] text-slate-500">Employee Portal v1.0</div>
             </div>
           </div>
         </aside>
 
-        <main className="flex-1">
+        <main className="flex-1 pb-[env(safe-area-inset-bottom)]">
           <header className="border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <div className="text-sm text-slate-500">Welcome back</div>
                 <h2 className="text-2xl font-bold">{activeAccount.name}</h2>
-                <p className="text-sm text-slate-500">{activeAccount.id} â€¢ {activeAccount.department} â€¢ Role view: {currentRole}</p>
+                <p className="text-sm text-slate-500">{activeAccount.id} • {activeAccount.department} • Role view: {currentRole}</p>
               </div>
               <div className="flex flex-wrap gap-3">
-                <button className="rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm">Beta Feedback</button>
-                <button onClick={() => setIsLoggedIn(false)} className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700">Switch Account</button>
+                <button className="rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm">Feedback</button>
+                <button onClick={handleLogout} className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700">Switch User</button>
               </div>
             </div>
           </header>
+
+          <div className="px-4 pt-4 sm:px-6">{renderConnectivityBanner()}</div>
 
           <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 sm:px-6 lg:hidden">
             <div className="mb-2 font-semibold">Mobile Navigation</div>
@@ -4711,6 +3249,16 @@ export default function EmployeePortalPrototype() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
